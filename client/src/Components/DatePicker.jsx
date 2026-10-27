@@ -1,10 +1,14 @@
 import React from "react";
 import { DatePicker } from "antd";
-import moment from "moment";
-import { parse, format } from "date-fns";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import isBetween from "dayjs/plugin/isBetween";
 import "../utils/dayPicker.css";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+dayjs.extend(customParseFormat);
+dayjs.extend(isBetween);
 
 const { RangePicker } = DatePicker;
 
@@ -12,9 +16,8 @@ const footer = () => {
   return (
     <div className="text-gray-500 font-semibold py-1">
       <p className="md:inline leading-[3px] mt-2">
-        <span className="text-pink">** </span>Dates which are disabled are already booked by{" "}
+        <span className="text-pink">** </span>Dates which are disabled are in the past or already booked by others.
       </p>
-      <p className="inline"> others for this place.</p>
     </div>
   );
 };
@@ -31,23 +34,40 @@ const DatePickerRange = ({ setCheckIn, setCheckOut, disabledDates }) => {
     }
 
     try {
-      const d1 = dates[0].$d || dates[0].toDate ? (dates[0].toDate ? dates[0].toDate() : dates[0].$d) : new Date(dates[0]);
-      const d2 = dates[1].$d || dates[1].toDate ? (dates[1].toDate ? dates[1].toDate() : dates[1].$d) : new Date(dates[1]);
+      const d1 = dayjs(dates[0]);
+      const d2 = dayjs(dates[1]);
+      const today = dayjs().startOf("day");
 
-      const checkin = format(d1, "dd/MM/yyyy");
-      const checkout = format(d2, "dd/MM/yyyy");
+      // Strict client-side check: past dates cannot be selected
+      if (d1.isBefore(today)) {
+        toast.error("Check-in date cannot be in the past.");
+        setCheckIn(null);
+        setCheckOut(null);
+        return;
+      }
 
-      const hasConflict = safeDisabledDates.some((date) =>
-        moment(date, "DD/MM/YYYY").isBetween(
-          moment(checkin, "DD/MM/YYYY"),
-          moment(checkout, "DD/MM/YYYY"),
-          null,
-          "[]"
-        )
-      );
+      if (d2.isBefore(d1)) {
+        toast.error("Check-out date must be on or after check-in date.");
+        setCheckIn(null);
+        setCheckOut(null);
+        return;
+      }
+
+      const checkin = d1.format("DD/MM/YYYY");
+      const checkout = d2.format("DD/MM/YYYY");
+
+      // Check conflict with already booked dates
+      const hasConflict = safeDisabledDates.some((dateStr) => {
+        const booked = dayjs(dateStr, "DD/MM/YYYY");
+        return (
+          booked.isSame(d1, "day") ||
+          booked.isSame(d2, "day") ||
+          (booked.isAfter(d1.startOf("day")) && booked.isBefore(d2.endOf("day")))
+        );
+      });
 
       if (hasConflict) {
-        toast.error("Place is already booked for part of that selected period");
+        toast.error("Accommodation is already reserved for part of that selected period.");
         setCheckIn(null);
         setCheckOut(null);
       } else {
@@ -63,29 +83,28 @@ const DatePickerRange = ({ setCheckIn, setCheckOut, disabledDates }) => {
 
   const disabledDate = (current) => {
     if (!current) return false;
-    const today = moment().startOf("day");
-    if (moment(current).isBefore(today, "day")) {
+    // 1. Disable all dates before today (past dates are completely unclickable)
+    if (current.isBefore(dayjs().startOf("day"))) {
       return true;
     }
+    // 2. Disable dates that are already booked
     if (safeDisabledDates.length > 0) {
-      return safeDisabledDates.some((date) =>
-        moment(current).isSame(moment(date, "DD/MM/YYYY"), "day")
-      );
+      const formatted = current.format("DD/MM/YYYY");
+      return safeDisabledDates.includes(formatted);
     }
     return false;
   };
 
   return (
-    <>
-      <RangePicker
-        placeholder={["CheckIn", "CheckOut"]}
-        onChange={(dates) => updateDates(dates)}
-        className="border-none cursor-pointer bg-white text-black font-medium"
-        disabledDate={disabledDate}
-        renderExtraFooter={footer}
-        inputReadOnly
-      />
-    </>
+    <RangePicker
+      placeholder={["Check-in", "Check-out"]}
+      format="YYYY-MM-DD"
+      onChange={(dates) => updateDates(dates)}
+      className="border-none cursor-pointer bg-white text-black font-medium"
+      disabledDate={disabledDate}
+      renderExtraFooter={footer}
+      inputReadOnly
+    />
   );
 };
 

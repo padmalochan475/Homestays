@@ -63,6 +63,20 @@ export default function BookingWidget({ place }) {
     if (!checkIn || !checkOut) {
       return toast.warn("Please select check-in and check-out dates");
     }
+
+    try {
+      const dIn = parse(checkIn.toString(), "dd/MM/yyyy", new Date());
+      const dOut = parse(checkOut.toString(), "dd/MM/yyyy", new Date());
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (dIn < today) {
+        return toast.error("Check-in date cannot be in the past.");
+      }
+      if (dOut < dIn) {
+        return toast.error("Check-out date must be on or after check-in date.");
+      }
+    } catch (e) {}
     if (!name.trim()) {
       return toast.warn("Please enter your full name");
     }

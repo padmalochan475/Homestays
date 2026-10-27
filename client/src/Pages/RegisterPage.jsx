@@ -20,18 +20,29 @@ const RegisterPage = () => {
 
     try {
       const response = await axios.post("/otp/sendMail", { email, name });
-      toast.success(response.data.message || "OTP sent successfully!");
 
+      // Zero-Configuration Mode: register peacefully and directly without any OTP modal obstacle!
+      if (response.data?.zeroConfig || response.data?.autoVerified) {
+        const regResponse = await axios.post("/user/register", { email, name, password });
+        if (regResponse.data?.token) {
+          localStorage.setItem("token", regResponse.data.token);
+        }
+        toast.success(`Welcome ${name}! Registered successfully.`);
+        setRedirect("/login");
+        return;
+      }
+
+      // Live Email Service Mode (when SMTP is configured)
+      toast.success(response.data.message || "Verification code sent to your email!");
       const user = {
         name,
         email,
         password,
-        demoOtp: response.data.demoOtp,
       };
       localStorage.setItem("user", JSON.stringify(user));
       setPopup(true);
     } catch (error) {
-      toast.error(error.response?.data?.error || "Unable to send verification OTP. Try again.");
+      toast.error(error.response?.data?.error || "Unable to complete registration. Try again.");
     } finally {
       setLoading(false);
     }

@@ -16,6 +16,27 @@ router.post('/', isLoggedIn, async (req, res) => {
             return res.status(400).json({ error: 'Please provide all booking details (place, dates, name, phone).' });
         }
 
+        // Validate that check-in date is not in the past and check-out is after check-in
+        try {
+            const partsIn = checkIn.split('/');
+            const partsOut = checkOut.split('/');
+            if (partsIn.length === 3 && partsOut.length === 3) {
+                const checkInDate = new Date(Number(partsIn[2]), Number(partsIn[1]) - 1, Number(partsIn[0]), 0, 0, 0);
+                const checkOutDate = new Date(Number(partsOut[2]), Number(partsOut[1]) - 1, Number(partsOut[0]), 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (checkInDate < today) {
+                    return res.status(400).json({ error: 'Check-in date cannot be in the past.' });
+                }
+                if (checkOutDate < checkInDate) {
+                    return res.status(400).json({ error: 'Check-out date must be on or after check-in date.' });
+                }
+            }
+        } catch (dateErr) {
+            console.warn('Booking date validation notice:', dateErr.message);
+        }
+
         const booking = await Booking.create({
             user: userId,
             place,

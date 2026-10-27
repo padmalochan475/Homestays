@@ -41,15 +41,9 @@ const Modal = ({ setPopup }) => {
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-[90%] max-w-[420px] flex flex-col items-center">
         <h1 className="font-bold text-center text-2xl mb-2 text-gray-800">Verify OTP</h1>
         <p className="text-gray-500 text-sm text-center mb-6">
-          Enter the 4-digit code sent to <br />
+          Enter the 4-digit verification code sent to <br />
           <span className="font-semibold text-gray-700">{storedUser.email}</span>
         </p>
-
-        {storedUser.demoOtp && (
-          <div className="bg-pink/10 border border-pink/30 rounded-xl px-4 py-2 mb-4 text-xs text-center text-pink font-medium">
-            Demo Mode Active: Verification Code is <span className="font-bold underline">{storedUser.demoOtp}</span>
-          </div>
-        )}
 
         <div className="flex justify-center items-center my-3">
           <OtpInput

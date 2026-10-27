@@ -425,7 +425,7 @@ function launchApplication() {
                 print(`  🔑 Host Account:    ${c.cyan}${c.bright}${activeHostEmail}${c.reset} / ${c.cyan}${activeHostPw}${c.reset}`);
                 print(`  🛡️ Admin Portal:    ${c.cyan}${c.bright}${activeAdminEmail}${c.reset} / ${c.cyan}${activeAdminPw}${c.reset} (or visit /admin)`);
                 print(`  ⚙️ Edit In .env:    ${c.dim}Change ADMIN_EMAIL / ADMIN_PASSWORD anytime in api/.env${c.reset}`);
-                print(`  📲 Demo Mode:       ${c.yellow}OTP codes are logged to console and pre-filled${c.reset}`);
+                print(`  ✨ Zero-Config Auth:${c.green} Direct peaceful registration active (or add Gmail App Password for live email)${c.reset}`);
                 print(c.green + '═'.repeat(68) + c.reset);
                 print(`\nOpening application in your default web browser (${detectedClientUrl})...\n`, c.cyan);
 

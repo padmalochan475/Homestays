@@ -194,10 +194,11 @@ This instantly configures [`render.yaml`](./render.yaml), `.github/workflows/kee
 | `BUCKET_NAME` | AWS S3 Bucket Name | *(Optional, falls back to disk)* |
 | `S3_ACCESS_KEY` | AWS S3 Access Key | *(Optional, falls back to disk)* |
 | `S3_SECRET_ACCESS_KEY` | AWS S3 Secret Key | *(Optional, falls back to disk)* |
-| `MAIL_USERNAME` | Google OAuth2 user email | *(Optional, demo OTP active)* |
-| `OAUTH_CLIENTID` | Google OAuth2 Client ID | *(Optional, demo OTP active)* |
-| `OAUTH_CLIENT_SECRET` | Google OAuth2 Client Secret | *(Optional, demo OTP active)* |
-| `OAUTH_REFRESH_TOKEN` | Google OAuth2 Refresh Token | *(Optional, demo OTP active)* |
+| `MAIL_USERNAME` | Email sender address | *(Optional, zero-config active by default)* |
+| `MAIL_PASSWORD` | Free Gmail App Password or SMTP password | *(Optional, 16-char Google App Password)* |
+| `OAUTH_CLIENTID` | Optional: Legacy Google OAuth2 Client ID | *(Optional)* |
+| `OAUTH_CLIENT_SECRET` | Optional: Legacy Google OAuth2 Client Secret | *(Optional)* |
+| `OAUTH_REFRESH_TOKEN` | Optional: Legacy Google OAuth2 Refresh Token | *(Optional)* |
 
 ### Frontend (`client/.env`)
 | Variable | Description | Default / Example |
