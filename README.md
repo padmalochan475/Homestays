@@ -213,6 +213,7 @@ This instantly configures [`render.yaml`](./render.yaml), `.github/workflows/kee
 3. **Cross-Domain Bearer Tokens**: Solves third-party cookie restrictions across `*.onrender.com` by injecting `Authorization: Bearer <token>` into Axios headers while maintaining cookie compatibility.
 4. **Auth State Hydration**: Protects account pages from bouncing users to `/login` during page refreshes by synchronizing auth state hydration.
 5. **Cascading Bookings Cleanup**: Cancelling a booking cleanly frees reserved dates from the listing and removes references from user profiles.
+6. **Bidirectional Credential Synchronization**: Editing administrator or host credentials (`ADMIN_EMAIL`, `ADMIN_PASSWORD`, `HOST_EMAIL`, `HOST_PASSWORD`) in `api/.env` automatically migrates accounts and syncs password hashes in MongoDB on boot or login; conversely, editing profile credentials in the Web UI automatically updates `api/.env` and runtime memory in real time.
 6. **IDOR Authorization Protection**: Users can only update or delete accommodations and reservations that they own.
 
 ---

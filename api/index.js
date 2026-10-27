@@ -85,14 +85,32 @@ const ensureDefaultAccounts = async () => {
         const bcrypt = require('bcryptjs');
         const adminEmail = (process.env.ADMIN_EMAIL || 'admin@homestays.com').toLowerCase().trim();
         const adminPw = process.env.ADMIN_PASSWORD || 'Admin@123';
+        const adminName = process.env.ADMIN_NAME || 'Platform Administrator';
+        
         const hostEmail = (process.env.HOST_EMAIL || 'demo@homestays.com').toLowerCase().trim();
         const hostPw = process.env.HOST_PASSWORD || 'Demo@123';
+        const hostName = process.env.HOST_NAME || 'Demo Host';
 
         // 1. Sync Administrator Account
-        const existingAdmin = await User.findOne({ email: adminEmail }).select('+password');
-        if (!existingAdmin) {
-            await User.create({
-                name: process.env.ADMIN_NAME || 'Platform Administrator',
+        let adminUser = await User.findOne({ email: adminEmail }).select('+password');
+
+        // If not found by configured adminEmail, check if legacy admin account exists to migrate
+        if (!adminUser && adminEmail !== 'admin@homestays.com') {
+            const legacyAdmin = await User.findOne({ email: 'admin@homestays.com' }).select('+password');
+            if (legacyAdmin) {
+                legacyAdmin.email = adminEmail;
+                legacyAdmin.name = adminName;
+                legacyAdmin.password = bcrypt.hashSync(adminPw, 10);
+                legacyAdmin.role = 'admin';
+                await legacyAdmin.save();
+                adminUser = legacyAdmin;
+                console.log(`[Auto-Sync] Migrated administrator account in MongoDB from admin@homestays.com to ${adminEmail} (synced from api/.env)`);
+            }
+        }
+
+        if (!adminUser) {
+            adminUser = await User.create({
+                name: adminName,
                 email: adminEmail,
                 password: bcrypt.hashSync(adminPw, 10),
                 role: 'admin',
@@ -100,25 +118,44 @@ const ensureDefaultAccounts = async () => {
             console.log(`[Auto-Init] Verified and created default administrator in MongoDB: ${adminEmail}`);
         } else {
             let needsSave = false;
-            if (existingAdmin.role !== 'admin') {
-                existingAdmin.role = 'admin';
+            if (adminUser.role !== 'admin') {
+                adminUser.role = 'admin';
                 needsSave = true;
             }
-            if (adminPw && !bcrypt.compareSync(adminPw, existingAdmin.password)) {
-                existingAdmin.password = bcrypt.hashSync(adminPw, 10);
+            if (adminName && adminUser.name !== adminName) {
+                adminUser.name = adminName;
+                needsSave = true;
+            }
+            if (adminPw && !bcrypt.compareSync(adminPw, adminUser.password)) {
+                adminUser.password = bcrypt.hashSync(adminPw, 10);
                 needsSave = true;
                 console.log(`[Auto-Sync] Synchronized administrator password in MongoDB to match api/.env (${adminEmail})`);
             }
             if (needsSave) {
-                await existingAdmin.save();
+                await adminUser.save();
             }
         }
 
         // 2. Sync Host Account
-        const existingHost = await User.findOne({ email: hostEmail }).select('+password');
-        if (!existingHost) {
-            await User.create({
-                name: process.env.HOST_NAME || 'Demo Host',
+        let hostUser = await User.findOne({ email: hostEmail }).select('+password');
+
+        // If not found by configured hostEmail, check if legacy host exists to migrate
+        if (!hostUser && hostEmail !== 'demo@homestays.com') {
+            const legacyHost = await User.findOne({ email: 'demo@homestays.com' }).select('+password');
+            if (legacyHost && legacyHost._id.toString() !== adminUser._id.toString()) {
+                legacyHost.email = hostEmail;
+                legacyHost.name = hostName;
+                legacyHost.password = bcrypt.hashSync(hostPw, 10);
+                legacyHost.role = 'admin';
+                await legacyHost.save();
+                hostUser = legacyHost;
+                console.log(`[Auto-Sync] Migrated host account in MongoDB from demo@homestays.com to ${hostEmail} (synced from api/.env)`);
+            }
+        }
+
+        if (!hostUser) {
+            hostUser = await User.create({
+                name: hostName,
                 email: hostEmail,
                 password: bcrypt.hashSync(hostPw, 10),
                 role: 'admin',
@@ -126,17 +163,21 @@ const ensureDefaultAccounts = async () => {
             console.log(`[Auto-Init] Verified and created default host account in MongoDB: ${hostEmail}`);
         } else {
             let needsSave = false;
-            if (existingHost.role !== 'admin') {
-                existingHost.role = 'admin';
+            if (hostUser.role !== 'admin') {
+                hostUser.role = 'admin';
                 needsSave = true;
             }
-            if (hostPw && !bcrypt.compareSync(hostPw, existingHost.password)) {
-                existingHost.password = bcrypt.hashSync(hostPw, 10);
+            if (hostName && hostUser.name !== hostName) {
+                hostUser.name = hostName;
+                needsSave = true;
+            }
+            if (hostPw && !bcrypt.compareSync(hostPw, hostUser.password)) {
+                hostUser.password = bcrypt.hashSync(hostPw, 10);
                 needsSave = true;
                 console.log(`[Auto-Sync] Synchronized host password in MongoDB to match api/.env (${hostEmail})`);
             }
             if (needsSave) {
-                await existingHost.save();
+                await hostUser.save();
             }
         }
     } catch (e) {

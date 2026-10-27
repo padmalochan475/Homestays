@@ -115,6 +115,13 @@ async function seedDatabase() {
     const hostName = process.env.HOST_NAME || 'Demo Host';
 
     let user = await User.findOne({ email: hostEmail });
+    if (!user && hostEmail !== 'demo@homestays.com') {
+        user = await User.findOne({ email: 'demo@homestays.com' });
+        if (user) {
+            console.log('\x1b[33m%s\x1b[0m', `[*] Migrating host email in MongoDB from demo@homestays.com to ${hostEmail}`);
+        }
+    }
+
     if (!user) {
         user = await User.create({
             name: hostName,
@@ -124,6 +131,7 @@ async function seedDatabase() {
         });
         console.log('\x1b[32m%s\x1b[0m', `[✓] Created Host Account: ${hostEmail} (Password: ${hostPassword}, Role: admin)`);
     } else {
+        user.email = hostEmail;
         user.name = hostName;
         user.password = bcrypt.hashSync(hostPassword, 10);
         user.role = 'admin';
@@ -136,6 +144,13 @@ async function seedDatabase() {
     const adminName = process.env.ADMIN_NAME || 'Platform Administrator';
 
     let adminUser = await User.findOne({ email: adminEmail });
+    if (!adminUser && adminEmail !== 'admin@homestays.com') {
+        adminUser = await User.findOne({ email: 'admin@homestays.com' });
+        if (adminUser) {
+            console.log('\x1b[33m%s\x1b[0m', `[*] Migrating admin email in MongoDB from admin@homestays.com to ${adminEmail}`);
+        }
+    }
+
     if (!adminUser) {
         adminUser = await User.create({
             name: adminName,
@@ -145,6 +160,7 @@ async function seedDatabase() {
         });
         console.log('\x1b[32m%s\x1b[0m', `[✓] Created Dedicated Admin Account: ${adminEmail} (Password: ${adminPassword}, Role: admin)`);
     } else {
+        adminUser.email = adminEmail;
         adminUser.name = adminName;
         adminUser.password = bcrypt.hashSync(adminPassword, 10);
         adminUser.role = 'admin';

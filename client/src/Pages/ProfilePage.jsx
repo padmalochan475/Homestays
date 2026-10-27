@@ -123,7 +123,7 @@ const ProfilePage = () => {
                     </svg>
                     Logout
                   </button>
-                  <Popover name={user?.name} setRedirect={setRedirect} />
+                  <Popover name={user?.name} email={user?.email} setUser={setUser} setRedirect={setRedirect} />
                 </div>
               </div>
             </div>
