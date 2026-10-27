@@ -1,0 +1,21 @@
+{
+  "name": "homestays",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HomeStays - Fullstack Vacation Rental Booking Application",
+  "scripts": {
+    "student": "node scripts/student-wizard.js",
+    "render": "node scripts/render-assistant.js",
+    "warmup": "node scripts/render-assistant.js",
+    "cli": "node scripts/cli.js",
+    "doctor": "node scripts/cli.js",
+    "setup": "node scripts/setup.js",
+    "setup:windows": "powershell -ExecutionPolicy Bypass -File ./setup.ps1",
+    "seed": "node scripts/seed.js",
+    "start": "node scripts/start.js",
+    "start:api": "npm start --prefix api",
+    "start:client": "npm run dev --prefix client",
+    "build:client": "npm run build --prefix client",
+    "configure:render": "powershell -ExecutionPolicy Bypass -File ./configure-render.ps1"
+  }
+}

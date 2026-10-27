@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, Navigate } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../Context/userContext";
 import { toast } from "react-toastify";
@@ -14,29 +14,35 @@ const LoginPage = () => {
   const { setUser } = useContext(UserContext);
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
-      const { data } = await axios.post("http://localhost:4000/user/login", { email, password });
+      const { data } = await axios.post("/user/login", { email, password });
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+      }
       setUser(data);
+      toast.success("Login Successful!");
+      setRedirect(true);
     } catch (e) {
-      if (e.response.status == 422) 
-        toast.error("Wrong Password!!");
-      else if (e.response.status == 404)
-        toast.info("Email does not Exist.Go register first");
-      else
-        toast.info("Something Wrong happen at our end.Try after some moment");
+      if (e.response?.status === 422) {
+        toast.error("Wrong Password!");
+      } else if (e.response?.status === 404) {
+        toast.info("Email does not exist. Please register first.");
+      } else {
+        toast.error(e.response?.data?.error || "Login failed. Check that the server is running.");
+      }
     } finally {
       setLoading(false);
-      setRedirect(true);
     }
   };
-  if (redirect)
-    location.state
-      ? navigate(location.state.prevPath,{state: {prevPath:'login'}})
-      : navigate("/");
+
+  if (redirect) {
+    return <Navigate to={location.state?.prevPath || "/"} state={{ prevPath: "login" }} />;
+  }
+
   return (
     <div className="mt-10 pt-6 grow flex-col items-center">
       {loading ? (
@@ -52,7 +58,6 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-
             />
             <input
               type="password"
@@ -61,14 +66,15 @@ const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              
             />
-            <button className="bg-pink p-2 w-[90%] text-white rounded-2xl mt-1 hover:scale-95 
-            transition-all xs:w-[400px]">
+            <button
+              className="bg-pink p-2 w-[90%] text-white rounded-2xl mt-1 hover:scale-95 
+            transition-all xs:w-[400px]"
+            >
               Login
             </button>
             <div className="text-center mt-1">
-              Didn't have an account yet?
+              Didn't have an account yet?{" "}
               <Link to={"/register"} className="text-pink underline">
                 Register now
               </Link>

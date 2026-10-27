@@ -13,10 +13,17 @@ const Popover = ({ name, setRedirect }) => {
     if (newPassword !== confirmedPassword) {
       toast.error("New Password and Confirm Password didn't match");
     } else {
-      await axios.put("/user", { newName, newPassword });
-      toast.success("Profile Updated Successfully!");
-      await axios.post("/user/logout");
-      setRedirect("/login");
+      try {
+        await axios.put("/user", { newName, newPassword });
+        toast.success("Profile Updated Successfully!");
+        try {
+          await axios.post("/user/logout");
+        } catch (e) {}
+        localStorage.removeItem("token");
+        setRedirect("/login");
+      } catch (err) {
+        toast.error("Unable to update profile. Please try again.");
+      }
     }
   };
   return (
@@ -49,42 +56,47 @@ const Popover = ({ name, setRedirect }) => {
           <Dialog.Title className="text-center text-[21px] font-bold text-pink mb-12 mt-4">
             Edit profile
           </Dialog.Title>
-          <fieldset className="mb-[15px] flex items-center gap-2 w-full xs:gap-4">
-            <label className="text-center text-[15px] w-[110px] font-semibold">
-              Name
+          <fieldset className="flex justify-between items-center w-full gap-5">
+            <label className="text-[17px] font-semibold text-center" htmlFor="name">
+              Name:
             </label>
             <input
-              className="w-full inline-flex h-[35px] flex-1 items-center justify-center rounded-[10px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px] outline-pink"
-              value={newName}
+              className="inline-flex h-[35px] w-[70%] items-center justify-center rounded-[4px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px] focus:shadow-[0_0_0_2px] focus:outline-none border-solid border-2 border-gray-500"
+              id="name"
+              defaultValue={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
           </fieldset>
-          <fieldset className="mb-[15px] flex items-center gap-2 w-full xs:gap-4">
-            <label className="text-center text-[15px] w-[110px] font-semibold">
-              New Password
+          <fieldset className="flex justify-between items-center w-full gap-5">
+            <label className="text-[17px] font-semibold text-center" htmlFor="username">
+              Password:
             </label>
             <input
-              className="text-violet11 shadow-violet7 focus:shadow-violet8 inline-flex h-[35px] w-full flex-1 items-center justify-center rounded-[10px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px]  outline-pink"
-              value={newPassword}
+              className="inline-flex h-[35px] w-[70%] items-center justify-center rounded-[4px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px] focus:shadow-[0_0_0_2px] focus:outline-none border-solid border-2 border-gray-500"
+              id="username"
+              type="password"
+              placeholder="new password"
+              defaultValue={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
           </fieldset>
-          <fieldset className="mb-[15px] flex items-center gap-2 w-full xs:gap-4">
-            <label className="text-center text-[15px] w-[110px] font-semibold">
-              Confirm Password
+          <fieldset className="flex justify-between items-center w-full gap-5">
+            <label className="text-[17px] font-semibold text-center" htmlFor="username">
+              Confirm Password:
             </label>
             <input
-              className="text-violet11 shadow-violet7 focus:shadow-violet8 inline-flex h-[35px] w-full flex-1 items-center justify-center rounded-[10px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px]  outline-pink"
-              value={confirmedPassword}
+              className="inline-flex h-[35px] w-[70%] items-center justify-center rounded-[4px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px] focus:shadow-[0_0_0_2px] focus:outline-none border-solid border-2 border-gray-500"
+              id="username"
+              type="password"
+              placeholder="confirm password"
+              defaultValue={confirmedPassword}
               onChange={(e) => setConfirmedPassword(e.target.value)}
             />
           </fieldset>
-          <div className="mt-[20px] flex justify-end bg-pink w-[150px] rounded-3xl px-1 py-0.5 hover:scale-105 transition-all">
+          <div className="mt-[25px] flex justify-end">
             <Dialog.Close asChild>
               <button
-                className="text-white inline-flex h-[35px] items-center justify-center rounded-[4px] 
-                px-[15px] font-medium leading-none focus:shadow-[0_0_0_2px] focus:outline-none text-[17px]
-                "
+                className="bg-pink text-white font-semibold hover:scale-105 inline-flex h-[35px] items-center justify-center rounded-[4px] px-[15px] leading-none transition-all"
                 onClick={saveChanges}
               >
                 Save changes
@@ -93,7 +105,7 @@ const Popover = ({ name, setRedirect }) => {
           </div>
           <Dialog.Close asChild>
             <button
-              className="text-violet11 hover:bg-violet4 focus:shadow-violet7 absolute top-[10px] right-[10px] inline-flex h-[30px] w-[30px] appearance-none items-center justify-center rounded-full focus:shadow-[0_0_0_2px] focus:outline-none"
+              className="text-violet11 hover:bg-violet4 focus:shadow-violet7 absolute top-[10px] right-[10px] inline-flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-full focus:shadow-[0_0_0_2px] focus:outline-none"
               aria-label="Close"
             >
               <Cross2Icon />
@@ -104,4 +116,5 @@ const Popover = ({ name, setRedirect }) => {
     </Dialog.Root>
   );
 };
+
 export default Popover;

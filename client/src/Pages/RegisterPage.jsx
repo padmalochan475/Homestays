@@ -12,41 +12,36 @@ const RegisterPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [redirect, setRedirect] = useState(null);
-  const [popup, setPopup] = useState(false)
+  const [popup, setPopup] = useState(false);
 
   const registerUser = async (e) => {
     e.preventDefault();
-
+    setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:4000/otp/sendMail', {email, name})
-      toast.success(response.data.message);
-      const user ={ name, email, password}
-      localStorage.setItem('user', JSON.stringify(user))
-      setPopup(!popup)
-    } catch (error) {
-      toast.error(error.response.data.error)
-    }
+      const response = await axios.post("/otp/sendMail", { email, name });
+      toast.success(response.data.message || "OTP sent successfully!");
 
-    // try {
-    //   setLoading(true);
-    //   await axios.post("http://localhost:4000/user/register", { name, email, password });
-    //   setLoading(false);
-    //   toast.success("Registration Successfull");
-    //   setRedirect("/login");
-    // } catch (error) {
-    //   if ((error.response.data.code = 11000))
-    //     toast.info("Email Already registered!!Try to Login");
-    //   else
-    //     toast.error(
-    //       "Something Wrong happened at our side!! Try after some time"
-    //     );
-    // }
+      const user = {
+        name,
+        email,
+        password,
+        demoOtp: response.data.demoOtp,
+      };
+      localStorage.setItem("user", JSON.stringify(user));
+      setPopup(true);
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Unable to send verification OTP. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
   if (redirect) return <Navigate to={redirect} />;
+
   return (
     <div className="mt-10 pt-6 grow flex-col items-center">
-      {popup && <Modal setPopup={setPopup}/>}
+      {popup && <Modal setPopup={setPopup} />}
       {loading ? (
         <Spinner />
       ) : (
@@ -75,7 +70,6 @@ const RegisterPage = () => {
               className="w-full border py-2 px-3 my-2 rounded-2xl border-gray-300"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              // pattern="^(?=.[a-z])(?=.[A-Z])(?=.[0-9])(?=.[!@#$%^&*_=+-]).{8,12}$"
               required
             />
             <button className="bg-pink p-2 w-full text-white rounded-2xl mt-1 hover:scale-95 transition-all">

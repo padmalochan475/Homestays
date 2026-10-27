@@ -1,0 +1,132 @@
+const path = require('path');
+const bcrypt = require('bcryptjs');
+
+// Load environment from api/.env
+require('dotenv').config({ path: path.join(__dirname, '../api/.env') });
+
+const apiDir = path.join(__dirname, '../api');
+let mongoose, User, Place;
+
+try {
+    mongoose = require(path.join(apiDir, 'node_modules/mongoose'));
+    User = require(path.join(apiDir, 'models/User'));
+    Place = require(path.join(apiDir, 'models/Place'));
+} catch (e) {
+    console.error('Please run "npm install" inside the api directory first.');
+    process.exit(1);
+}
+
+const DB_URL = process.env.DB_URL;
+if (!DB_URL) {
+    console.error('DB_URL not found in api/.env. Please configure DB_URL first.');
+    process.exit(1);
+}
+
+const samplePlaces = [
+    {
+        title: "Mountain Mist Luxury Chalet",
+        address: "Old Manali, Himachal Pradesh, India",
+        photos: [
+            "https://images.unsplash.com/photo-1587061949409-02df41d5e562?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1000&q=80"
+        ],
+        description: "Escape to this breathtaking cedar wood chalet overlooking snow-capped Himalayan peaks. Features high-speed WiFi, cozy fireplace, panoramic balcony, and organic breakfast served fresh every morning.",
+        perks: ["wifi", "parking", "tv", "radio"],
+        extraInfo: "Check-in after 2:00 PM. Bonfire and heater available on request. Pets are welcome.",
+        maxGuests: 4,
+        price: 4500,
+    },
+    {
+        title: "Sunset Wave Villa & Private Pool",
+        address: "Anjuna Beach, Goa, India",
+        photos: [
+            "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1000&q=80"
+        ],
+        description: "Contemporary tropical sanctuary located just 200m from the shoreline. Relax in your private plunge pool, enjoy open-air living, and watch mesmerizing sunsets right from the patio.",
+        perks: ["wifi", "parking", "tv", "pets", "entrance"],
+        extraInfo: "Quiet hours after 11 PM. Beach gear and scooters available for rent.",
+        maxGuests: 6,
+        price: 8200,
+    },
+    {
+        title: "Royal Heritage Courtyard Haveli",
+        address: "C-Scheme, Jaipur, Rajasthan, India",
+        photos: [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1000&q=80"
+        ],
+        description: "Experience authentic royal Rajasthani hospitality. Intricately carved stone archways, antique decor, private inner courtyard garden, and rooftop dining with views of Nahargarh Fort.",
+        perks: ["wifi", "parking", "tv", "radio", "entrance"],
+        extraInfo: "Traditional Rajasthani thali dinner can be arranged. Authentic artisanal tours available.",
+        maxGuests: 5,
+        price: 5800,
+    },
+    {
+        title: "Emerald Estate Tea Plantation Cottage",
+        address: "Munnar Hills, Idukki, Kerala, India",
+        photos: [
+            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1000&q=80"
+        ],
+        description: "Nestled in rolling hills of lush tea estates, this tranquil stone cottage offers fresh mountain air, guided plantation walks, birdwatching spots, and home-cooked South Indian delicacies.",
+        perks: ["wifi", "parking", "tv", "pets"],
+        extraInfo: "Mornings can be chilly; warm blankets and hot water provided. Fresh tea tasting included.",
+        maxGuests: 4,
+        price: 3900,
+    }
+];
+
+async function seedDatabase() {
+    console.log('\x1b[36m%s\x1b[0m', 'Connecting to MongoDB to seed sample data...');
+    mongoose.set('strictQuery', false);
+    await mongoose.connect(DB_URL);
+    console.log('\x1b[32m%s\x1b[0m', '[✓] Connected to MongoDB!');
+
+    // 1. Create Demo User
+    const demoEmail = 'demo@homestays.com';
+    let user = await User.findOne({ email: demoEmail });
+    if (!user) {
+        const hashedPassword = bcrypt.hashSync('Demo@123', 10);
+        user = await User.create({
+            name: 'Demo Host',
+            email: demoEmail,
+            password: hashedPassword,
+        });
+        console.log('\x1b[32m%s\x1b[0m', `[✓] Created Demo User: ${demoEmail} (Password: Demo@123)`);
+    } else {
+        console.log('\x1b[33m%s\x1b[0m', `[*] Demo User already exists: ${demoEmail}`);
+    }
+
+    // 2. Create Sample Places
+    let createdCount = 0;
+    for (const placeData of samplePlaces) {
+        const exists = await Place.findOne({ title: placeData.title });
+        if (!exists) {
+            await Place.create({
+                ...placeData,
+                owner: user._id,
+            });
+            createdCount++;
+        }
+    }
+
+    console.log('\x1b[32m%s\x1b[0m', `[✓] Successfully added ${createdCount} sample homestay listings!`);
+    console.log('\n======================================================');
+    console.log(' Demo Login Credentials:');
+    console.log(' Email:    demo@homestays.com');
+    console.log(' Password: Demo@123');
+    console.log('======================================================\n');
+
+    await mongoose.disconnect();
+    process.exit(0);
+}
+
+seedDatabase().catch((err) => {
+    console.error('Error seeding database:', err.message);
+    process.exit(1);
+});

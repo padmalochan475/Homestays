@@ -1,15 +1,16 @@
-import { React, useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Perks from "../Components/Perks";
-import PhotosUploader from "../Components/PhotosUploader";
 import axios from "axios";
 import { Navigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { UserContext } from "../Context/userContext";
+import Image from "../Components/Image";
+import Spinner from "../Components/Spinner";
 
 const InputHeading = ({ text }) => {
   return (
-    <label htmlFor="title" className="font-semibold text-2xl">
+    <label className="font-semibold text-2xl">
       {text}
     </label>
   );
@@ -20,26 +21,14 @@ const InputDesc = ({ text, isRequired }) => {
     <p className="text-gray-500 text-sm font-semibold mb-1">
       {text}
       {isRequired && (
-        <sup>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="red"
-            className="w-2 h-2 inline-block"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401Z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </sup>
+        <sup className="text-red-500 font-bold ml-0.5">*</sup>
       )}
     </p>
   );
 };
+
 const AddPlacePage = () => {
-  const { user } = useContext(UserContext);
+  const { user, ready } = useContext(UserContext);
   const { id } = useParams();
   const [redirect, setRedirect] = useState(false);
   const [title, setTitle] = useState("");
@@ -50,160 +39,252 @@ const AddPlacePage = () => {
   const [perks, setPerks] = useState([]);
   const [extraInfo, setExtraInfo] = useState("");
   const [maxGuests, setMaxGuests] = useState(1);
-  const [price,setPrice] = useState();
-  
+  const [price, setPrice] = useState("");
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     if (id) {
       axios.get(`/place/${id}`).then(({ data }) => {
-        setTitle(data.title);
-        setAddress(data.address);
-        setDescription(data.description);
-        setAddedPhotos(data.photos);
-        setPerks(data.perks);
-        setExtraInfo(data.extraInfo);
-        setMaxGuests(data.maxGuests);
-        setPrice(data.price);
+        setTitle(data.title || "");
+        setAddress(data.address || "");
+        setDescription(data.description || "");
+        setAddedPhotos(data.photos || []);
+        setPerks(data.perks || []);
+        setExtraInfo(data.extraInfo || "");
+        setMaxGuests(data.maxGuests || 1);
+        setPrice(data.price || "");
+      }).catch((err) => {
+        console.error("Error loading place:", err);
       });
     }
   }, [id]);
-  const addPhoto = () => {
-    const isPhotoExist = addedPhotos.find((addedPhoto) => addedPhoto === photoLink )
-    if(isPhotoExist){
-      toast.error("This link is already added")
-    } else {
-      setAddedPhotos((prev) => [...prev, photoLink])
-      toast.success("Link added successfully")
+
+  const addPhotoByLink = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!photoLink.trim()) {
+      return toast.warn("Please enter a photo link");
     }
-  }
-  const removePhoto = (url) => {
-    const remainedPhoto = addedPhotos.filter((photo) => photo !== url)
-    setAddedPhotos(remainedPhoto)
-  }
-  const addNewPlace = async (e) => {
-    e.preventDefault();
+
     try {
+      setUploading(true);
+      const { data } = await axios.post("/upload_by_link", { imgLink: photoLink.trim() });
+      const photoUrl = typeof data === "string" ? data : photoLink.trim();
 
-
-      const data = {title, address, addedPhotos, description,
-        perks, extraInfo, maxGuests, price,
-      };
-      console.log(data)
-      if(id){
-        await axios.put('http://localhost:4000/place',{id,...data});
-        toast.success("Place Updated Successfully!!");
+      if (addedPhotos.includes(photoUrl)) {
+        toast.info("This photo is already added");
+      } else {
+        setAddedPhotos((prev) => [...prev, photoUrl]);
+        toast.success("Photo added successfully!");
+        setPhotoLink("");
       }
-      else{
-        await axios.post("http://localhost:4000/place", data);
-        toast.success("Place Added Successfully!!");
-      } 
-      setRedirect(true);
-    } catch (e) {
-      toast.error("Something Wrong happened!!");
+    } catch (err) {
+      // Fallback: direct external link
+      setAddedPhotos((prev) => [...prev, photoLink.trim()]);
+      toast.success("Photo link added!");
+      setPhotoLink("");
+    } finally {
+      setUploading(false);
     }
   };
 
-  if (redirect) return <Navigate to={"/account"} />;
+  const uploadFile = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const data = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      data.append("photos", files[i]);
+    }
+
+    try {
+      setUploading(true);
+      const res = await axios.post("/upload", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (Array.isArray(res.data)) {
+        setAddedPhotos((prev) => [...prev, ...res.data]);
+        toast.success("Photos uploaded successfully!");
+      }
+    } catch (err) {
+      toast.error("Failed to upload photos. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePhoto = (url) => {
+    setAddedPhotos(addedPhotos.filter((photo) => photo !== url));
+  };
+
+  const addNewPlace = async (e) => {
+    e.preventDefault();
+    try {
+      const data = {
+        title,
+        address,
+        addedPhotos,
+        description,
+        perks,
+        extraInfo,
+        maxGuests: Number(maxGuests),
+        price: Number(price),
+      };
+
+      if (id) {
+        await axios.put("/place", { id, ...data });
+        toast.success("Place Updated Successfully!");
+      } else {
+        await axios.post("/place", data);
+        toast.success("Place Added Successfully!");
+      }
+      setRedirect(true);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Something went wrong while saving the place.");
+    }
+  };
+
+  if (redirect) return <Navigate to={"/account/places"} />;
+
+  if (!ready) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Spinner width={120} height={120} />
+      </div>
+    );
+  }
+
+  if (ready && !user) {
+    return <Navigate to={"/login"} />;
+  }
+
   return (
-    <form onSubmit={addNewPlace} className="px-2 md:px-8">
+    <form onSubmit={addNewPlace} className="px-2 md:px-8 max-w-4xl mx-auto">
       <InputHeading text="Title" />
       <InputDesc
-        text={
-          "Title for your place, should be short and catchy as in advertisement"
-        }
+        text="Title for your place, should be short and catchy as in advertisement"
         isRequired={true}
       />
       <input
         type="text"
-        placeholder="title, for example: My lovely Villa"
-        className="w-full rounded-xl py-1.5 px-4 border border-gray-300 mb-4"
-        id="title"
+        placeholder="Title, for example: My Lovely Sea View Villa"
+        className="w-full rounded-xl py-2 px-4 border border-gray-300 mb-4"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         required
       />
 
       <InputHeading text="Address" />
-      <InputDesc text={"Address to this place"} isRequired={true} />
+      <InputDesc text="Address or location of this place" isRequired={true} />
       <input
         type="text"
-        placeholder="Address"
-        id="address"
-        className="w-full rounded-xl py-1.5 px-4 border border-gray-300 mb-4"
+        placeholder="Address (City, State, Country)"
+        className="w-full rounded-xl py-2 px-4 border border-gray-300 mb-4"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
         required
       />
+
       <InputHeading text="Photos" />
-      <InputDesc text={"more = better"} isRequired={true} />
-      {/* <PhotosUploader
-        photoLink={photoLink}
-        setPhotoLink={setPhotoLink}
-        addedPhotos={addedPhotos}
-        setAddedPhotos={setAddedPhotos}
-      /> */}
-      <input
+      <InputDesc text="Add photos using a URL or upload from your device" isRequired={addedPhotos.length === 0} />
+      <div className="flex gap-2 mb-3">
+        <input
           type="text"
-          placeholder="Add first photo ... jpg"
-          className="w-full rounded-xl py-1.5 px-4 border border-gray-300 mb-4"
+          placeholder="Paste an image URL (e.g. https://images.unsplash.com/...)"
+          className="flex-1 rounded-xl py-2 px-4 border border-gray-300"
           value={photoLink}
-          onChange={(e) => {setPhotoLink(e.target.value); }}
+          onChange={(e) => setPhotoLink(e.target.value)}
         />
         <button
-          className="bg-pink text-white w-32 h-10 rounded-2xl font-semibold"
-          onClick={addPhoto}
-        >Add Photo
+          type="button"
+          disabled={uploading}
+          className="bg-pink text-white px-5 py-2 rounded-xl font-semibold hover:opacity-90 transition-all shrink-0"
+          onClick={addPhotoByLink}
+        >
+          {uploading ? "Adding..." : "Add Photo"}
         </button>
-        <div className="flex gap-2 pt-2">
-        { addedPhotos.length !==0 && addedPhotos.map((url, index) => {
-          return <div className="cursor-pointer" onClick={() => removePhoto(url)}>x<img key={index} src={url} height={"150"} width={"150"} className="border rounded shadow-md shadow-gray-300"/></div>
-        })}
-        </div>
+      </div>
 
-      <InputHeading text={"Description"} />
-      <InputDesc text={"Description of the place"} isRequired={true} />
+      <div className="mb-4">
+        <label className="border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-all">
+          <input
+            type="file"
+            multiple
+            className="hidden"
+            onChange={uploadFile}
+            accept="image/*"
+          />
+          <span className="text-gray-600 font-medium">📁 Upload from your computer</span>
+          <span className="text-gray-400 text-xs mt-1">PNG, JPG, WEBP accepted</span>
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+        {addedPhotos.map((url, index) => (
+          <div key={index} className="relative h-28 rounded-xl overflow-hidden group border">
+            <Image src={url} alt={`photo-${index}`} className="w-full h-full object-cover" />
+            <button
+              type="button"
+              onClick={() => removePhoto(url)}
+              className="absolute top-1 right-1 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-all"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <InputHeading text="Description" />
+      <InputDesc text="Detailed description of the homestay and amenities" isRequired={true} />
       <textarea
         rows={5}
-        className="w-full rounded-xl py-1.5 px-4 border border-gray-300 mb-4"
+        className="w-full rounded-xl py-2 px-4 border border-gray-300 mb-4"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         required
       />
 
       <label className="font-semibold text-2xl">Perks</label>
-      <InputDesc text={"Select all the perks of your place"} />
+      <InputDesc text="Select all the perks offered at your place" />
       <Perks perks={perks} setPerks={setPerks} />
 
-      <InputHeading text={"Extra Info"} />
-      <InputDesc text={"house rules, etc"} />
+      <InputHeading text="Extra Info" />
+      <InputDesc text="House rules, check-in instructions, surrounding area, etc." />
       <textarea
-        rows={5}
-        className="w-full rounded-xl py-1.5 px-4 border border-gray-300 mb-4"
+        rows={4}
+        className="w-full rounded-xl py-2 px-4 border border-gray-300 mb-4"
         value={extraInfo}
         onChange={(e) => setExtraInfo(e.target.value)}
-        required
       />
-      <div className="flex flex-col w-full gap-x-16 md:flex-row">
-        <div className="w-full md:w-1/2">
-          <h3 className="mt-2 mb-1 font-semibold text-xl">Maximum guests</h3>
-          <p className="text-sm font-medium text-gray-500 mb-2">Maximum capacity of place for staying of guests at a same time</p>
+
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1">
+          <h3 className="font-semibold text-lg mb-1">Maximum Guests</h3>
           <input
             type="number"
-            className="w-full rounded-xl py-1.5 px-4 border border-gray-300 mb-4"
+            min="1"
+            className="w-full rounded-xl py-2 px-4 border border-gray-300"
             value={maxGuests}
             onChange={(e) => setMaxGuests(e.target.value)}
             required
           />
         </div>
-        <div className="w-full md:w-1/2">
-            <h3 className="mt-2 mb-1 font-semibold text-xl">Price per night</h3>
-            <p className="text-sm font-medium text-gray-500 mb-2">Try to give reasonable price considering all the factors.(in Rupees)</p>
-            <input type="number" value={price} 
-            className="w-full rounded-xl py-1.5 px-4 border border-gray-300 mb-4"
-            onChange={ev => setPrice(ev.target.value)}/>
+        <div className="flex-1">
+          <h3 className="font-semibold text-lg mb-1">Price Per Night (₹)</h3>
+          <input
+            type="number"
+            min="0"
+            className="w-full rounded-xl py-2 px-4 border border-gray-300"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+          />
         </div>
       </div>
+
       <button
-        className="bg-pink w-full rounded-2xl text-white py-2 font-semibold text-xl mt-3 mb-5 hover:scale-95 transition-all" onClick={(e) => addNewPlace} >
+        type="submit"
+        className="bg-pink w-full rounded-2xl text-white py-3 font-semibold text-xl mb-8 hover:opacity-90 transition-all shadow-md"
+      >
         Save Your Place
       </button>
     </form>

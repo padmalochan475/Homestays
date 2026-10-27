@@ -1,0 +1,17 @@
+name: Keep Render Alive 24/7
+
+on:
+  schedule:
+    # Runs every 10 minutes automatically from GitHub's cloud
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual trigger if desired
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Live API Health Endpoint
+        run: |
+          API_URL="${{ vars.LIVE_API_URL || 'https://homestays-api.onrender.com' }}"
+          echo "Pinging $API_URL/health..."
+          curl -s -f -m 30 "$API_URL/health" || echo "Ping dispatched (server waking up)"

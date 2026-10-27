@@ -1,16 +1,14 @@
 const mongoose = require('mongoose');
-require('dotenv').config()
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config();
 
 const connectWithDB = () => {
-  mongoose.set('strictQuery', false);
-  mongoose
-    .connect(process.env.DB_URL)
-    .then(console.log(`Connected to database successfully`))
-    .catch((err) => {
-      console.log(`DB connection failed`);
-      console.log(err);
-      process.exit(1);
-    });
+    mongoose.set('strictQuery', false);
+    return mongoose.connect(process.env.DB_URL, { serverSelectionTimeoutMS: 5000 })
+        .then(() => {
+            console.log('Connected to database successfully');
+        });
 };
 
 module.exports = connectWithDB;

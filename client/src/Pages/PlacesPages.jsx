@@ -4,6 +4,7 @@ import AddPlacePage from "./AddPlacePage";
 import axios from "axios";
 import Spinner from "../Components/Spinner";
 import Image from "../Components/Image";
+import { toast } from "react-toastify";
 
 const PlacesPages = () => {
   const { action } = useParams();
@@ -11,24 +12,37 @@ const PlacesPages = () => {
   const [places, setPlaces] = useState([]);
   const [refresh, setRefresh] = useState(false);
   const [loading, setLoading] = useState(true);
-  
 
   useEffect(() => {
-    axios.get("http://localhost:4000/place/account").then(({ data }) => {
-      setPlaces(data);
-      setLoading(false);
-    });
+    axios
+      .get("/place/account")
+      .then(({ data }) => {
+        if (Array.isArray(data)) {
+          setPlaces(data);
+        } else {
+          setPlaces([]);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching places:", err);
+        setPlaces([]);
+      })
+      .finally(() => setLoading(false));
   }, [refresh]);
 
   const removePlace = async (placeId) => {
-    try{
-      await axios.delete(`http://localhost:4000/place`,{data:{placeId}});
+    try {
+      await axios.delete("/place", { data: { placeId } });
+      toast.success("Place deleted successfully");
       setRefresh(!refresh);
-    }catch(err){
-      console.log(err.message);
+    } catch (err) {
+      toast.error("Failed to delete place");
+      console.error(err.message);
     }
   };
+
   if (redirect) return <Navigate to={redirect} />;
+
   return (
     <div>
       {action !== "new" && (
@@ -44,7 +58,7 @@ const PlacesPages = () => {
               viewBox="0 0 24 24"
               strokeWidth="1.5"
               stroke="currentColor"
-              class="w-6 h-6"
+              className="w-6 h-6 mr-1"
             >
               <path
                 strokeLinecap="round"
@@ -61,50 +75,59 @@ const PlacesPages = () => {
       {!loading &&
         places.length > 0 &&
         places.map((place) => {
+          const mainPhoto = place.photos && place.photos.length > 0 ? place.photos[0] : "";
           return (
-            <div className="w-full bg-gray-100 rounded-xl p-2 mt-5 flex-col max-w-[750px] mx-auto" 
-            key={place._id}>
+            <div
+              className="w-full bg-gray-100 rounded-xl p-4 mt-5 flex-col max-w-[750px] mx-auto shadow-sm"
+              key={place._id}
+            >
               <div className="flex flex-col gap-2 cursor-pointer sm:flex-row sm:gap-5 items-center">
-                <div className="h-36 w-[270px] bg-gray-200 rounded-xl mx-auto grow shrink-0 sm:w-[200px] md:h-32">
+                <div className="h-36 w-[270px] bg-gray-200 rounded-xl mx-auto grow shrink-0 sm:w-[200px] md:h-32 overflow-hidden">
                   <Image
-                    src={place.photos[0]}
-                    alt="preview-photo"
+                    src={mainPhoto}
+                    alt={place.title || "preview-photo"}
                     className="w-full rounded-xl h-full object-cover"
                   />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-[18px] text-center mb-2">{place.title}</h2>
-                  <p className="text-sm hidden sm:inline-block">
-                    {place.description.substr(0, 300)}
-                    {place.description.length > 300 && "......"}
+                  <h2 className="font-semibold text-[18px] text-center sm:text-left mb-2">
+                    {place.title}
+                  </h2>
+                  <p className="text-sm text-gray-600 hidden sm:inline-block">
+                    {place.description ? place.description.substring(0, 300) : ""}
+                    {place.description && place.description.length > 300 ? "......" : ""}
                   </p>
                 </div>
               </div>
-              <div className="flex justify-center gap-x-8 gap-y-2 mt-2 sm:gap-24 flex-wrap sm:mt-3">
+              <div className="flex justify-center gap-x-8 gap-y-2 mt-2 sm:gap-12 flex-wrap sm:mt-4">
                 <Link
                   to={`/place/${place._id}`}
-                  className="px-4 py-2 bg-pink text-white font-semibold rounded-3xl hover:scale-105 transition-all"
+                  className="px-4 py-2 bg-pink text-white font-semibold rounded-3xl hover:scale-105 transition-all text-sm"
                 >
                   Preview Place
                 </Link>
-                {  <Link
+                <Link
                   to={`/account/places/${place._id}`}
-                  className="px-4 py-2 bg-pink text-white font-semibold rounded-3xl hover:scale-105 transition-all"
+                  className="px-4 py-2 bg-pink text-white font-semibold rounded-3xl hover:scale-105 transition-all text-sm"
                 >
-                  Edit Your Place
-                </Link>}
+                  Edit Place
+                </Link>
                 <button
-                  className="px-4 py-2 bg-pink text-white font-semibold rounded-3xl 
-                hover:scale-105 transition-all"
+                  type="button"
+                  className="px-4 py-2 bg-red-600 text-white font-semibold rounded-3xl hover:scale-105 transition-all text-sm"
                   onClick={() => removePlace(place._id)}
                 >
-                  Remove Place
+                  Delete Place
                 </button>
               </div>
             </div>
           );
         })}
+      {!loading && places.length === 0 && action !== "new" && (
+        <p className="text-center text-gray-500 mt-8">No accommodations listed yet. Click "Add new place" to create one!</p>
+      )}
     </div>
   );
 };
+
 export default PlacesPages;

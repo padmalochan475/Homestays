@@ -13,23 +13,37 @@ import Popover from "../Components/Popover";
 const ProfilePage = () => {
   const [redirect, setRedirect] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { user, setUser } = useContext(UserContext);
+  const { user, setUser, ready } = useContext(UserContext);
 
   let { subpage } = useParams();
   if (subpage === undefined) {
     subpage = "profile";
   }
-  
+
+  if (!ready) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Spinner width={120} height={120} />
+      </div>
+    );
+  }
+
   if (!user && !redirect) return <Navigate to={"/login"} />;
 
   const logout = async () => {
     setLoading(true);
-    await axios.post("http://localhost:4000/user/logout");
+    try {
+      await axios.post("/user/logout");
+    } catch (e) {
+      console.warn("Logout request failed:", e);
+    }
+    localStorage.removeItem("token");
     toast.info("Logout Successfully!!");
     setUser(null);
     setLoading(false);
     setRedirect("/");
   };
+
   if (redirect) return <Navigate to={redirect} />;
 
   return (
@@ -41,11 +55,11 @@ const ProfilePage = () => {
         <>
           {subpage === "profile" && (
             <div className="text-center w-full max-w-[700px] mx-auto flex flex-col justify-center items-center xs:flex-row">
-                <img
-                  src={"/profileIcon.jpg"}
-                  alt="profile-icon"
-                  className="w-[200px] sm:w-[300px]"
-                />
+              <img
+                src={"/profileIcon.jpg"}
+                alt="profile-icon"
+                className="w-[200px] sm:w-[300px]"
+              />
               <div className="flex flex-col gap-6 sm:gap-16">
                 <div className="flex flex-col gap-3">
                   <div className="flex gap-2 items-center">
@@ -64,7 +78,7 @@ const ProfilePage = () => {
                       />
                     </svg>
                     <h1 className="text-[20px] font-medium sm:text-[22px]">
-                      Name : <span className="text-gray-500">{user.name}</span>
+                      Name : <span className="text-gray-500">{user?.name}</span>
                     </h1>
                   </div>
                   <div className="flex gap-2 items-center">
@@ -83,8 +97,7 @@ const ProfilePage = () => {
                       />
                     </svg>
                     <h1 className="text-[20px] font-medium sm:text-[22px]">
-                      Email :{" "}
-                      <span className="text-gray-500">{user.email}</span>
+                      Email : <span className="text-gray-500">{user?.email}</span>
                     </h1>
                   </div>
                 </div>
@@ -110,7 +123,7 @@ const ProfilePage = () => {
                     </svg>
                     Logout
                   </button>
-                   <Popover name={user.name} setRedirect={setRedirect} />
+                  <Popover name={user?.name} setRedirect={setRedirect} />
                 </div>
               </div>
             </div>

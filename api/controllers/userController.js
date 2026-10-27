@@ -2,133 +2,206 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const jwtSecret = process.env.JWT_SECRET;
 const bcrypt = require('bcryptjs');
 const isLoggedIn = require('../middlewares/userAuth');
 
 const bcryptSalt = bcrypt.genSaltSync(10);
 
-
-//route to handle new registration for user.
+// Route to handle new registration for user
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
-    // console.log(req.body)
-    try {
-        const newUser = await User.create({
-            name,
-            email,
-            password: bcrypt.hashSync(password, bcryptSalt),
-        })
-        res.json(newUser)
-    } catch (e) {
-        res.status(422).json(e);
-    }
-})
+    const normalizedEmail = (email || '').toLowerCase().trim();
+    const normalizedName = (name || '').trim();
 
-//route to handle user login
+    if (!normalizedEmail || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    try {
+        const existing = await User.findOne({ email: normalizedEmail });
+        if (existing) {
+            return res.status(422).json({ code: 11000, error: 'Email already registered' });
+        }
+
+        const newUser = await User.create({
+            name: normalizedName || 'User',
+            email: normalizedEmail,
+            password: bcrypt.hashSync(password, bcryptSalt),
+        });
+
+        const jwtSecret = process.env.JWT_SECRET;
+        const token = jwt.sign(
+            { email: newUser.email, id: newUser._id, name: newUser.name },
+            jwtSecret,
+            { expiresIn: '24h' }
+        );
+
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'lax',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+
+        const userResponse = newUser.toObject();
+        delete userResponse.password;
+        userResponse.token = token;
+        res.json(userResponse);
+    } catch (e) {
+        console.error('Registration error:', e);
+        res.status(422).json({ error: e.message });
+    }
+});
+
+// Route to handle user login
 router.post('/login', async (req, res) => {
-    console.log(req.body)
     try {
         const { email, password } = req.body;
+        const normalizedEmail = (email || '').toLowerCase().trim();
 
-        const user = await User.findOne({ email });
-        if (!user)
-            return res.status(404).json("User Not Exist");
-        const passOk = bcrypt.compareSync(password, user.password);
-        if (!passOk)
-            return res.status(422).json("Wrong Password");
-        jwt.sign({ email: user.email, id: user._id, name: user.name }, jwtSecret, { expiresIn: '24h' }, (err, token) => {
-            if (err)
-               { throw err;} else{
-                res.cookie('token', token).json(user);
-                localStorage.setItem('token', token)
-               }
-        });
-    } catch (err) {
-        res.status(500).json({
-            message: "Internal Server Error",
-            error: err.message
-        });
-    }
-})
-//route to hadle logout of user
-router.post('/logout', async (req, res) => {
-    res.cookie('token', '').json(true);
-})
-
-
-//route to update user name or password
-router.put('/', isLoggedIn, async (req, res) => {
-    try {
-        const { newName, newPassword } = req.body;
-        const userId = req.user.id;
-        const newAttributes = {
-            name: newName,
-            password: bcrypt.hashSync(newPassword, bcryptSalt)
+        if (!normalizedEmail || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
         }
-        const updatedUser = await User.findByIdAndUpdate(userId, { $set: newAttributes });
-        res.status(200).json(updatedUser);
-    } catch (err) {
-        res.status(500).json(err.message);
-    }
-})
 
-//route to get users full data.
-router.get('/', isLoggedIn, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        res.json(user);
+        const user = await User.findOne({ email: normalizedEmail }).select('+password');
+        if (!user) {
+            return res.status(404).json({ error: 'User does not exist. Please register first.' });
+        }
+
+        const passOk = bcrypt.compareSync(password, user.password);
+        if (!passOk) {
+            return res.status(422).json({ error: 'Wrong Password' });
+        }
+
+        const jwtSecret = process.env.JWT_SECRET;
+        const token = jwt.sign(
+            { email: user.email, id: user._id, name: user.name },
+            jwtSecret,
+            { expiresIn: '24h' }
+        );
+
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'lax',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+
+        const userResponse = user.toObject();
+        delete userResponse.password;
+        userResponse.token = token;
+        return res.json(userResponse);
     } catch (err) {
-        console.error(err);
+        console.error('Login error:', err);
         res.status(500).json({
-            success: false,
             message: 'Internal Server Error',
-            error: err.message, // Include the error message in the response
+            error: err.message,
         });
     }
 });
 
-router.get('/allusers', async (req, res) => {
-    const users = await User.find({})
+// Route to handle logout of user
+router.post('/logout', async (_req, res) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+    }).json(true);
+});
 
-    res.json(users)
-})
+// Route to update user name or password
+router.put('/', isLoggedIn, async (req, res) => {
+    try {
+        const { newName, newPassword } = req.body;
+        const userId = req.user.id;
+        const newAttributes = {};
+        if (newName) newAttributes.name = newName.trim();
+        if (newPassword) {
+            newAttributes.password = bcrypt.hashSync(newPassword, bcryptSalt);
+        }
+        const updatedUser = await User.findByIdAndUpdate(userId, { $set: newAttributes }, { new: true });
+        res.status(200).json(updatedUser);
+    } catch (err) {
+        console.error('Update profile error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
-//route to get data for user profile
+// Route to get current user's profile
+router.get('/', isLoggedIn, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+    } catch (err) {
+        console.error('Get user error:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error',
+            error: err.message,
+        });
+    }
+});
+
+router.get('/allusers', async (_req, res) => {
+    try {
+        const users = await User.find({}).select('-password');
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Route to get data for user profile
 router.get('/profile', isLoggedIn, (req, res) => {
     res.json(req.user);
-})
+});
 
-//route to update add bookings and bookedPlaces data inside user on a booking.
+// Route to update add bookings and bookedPlaces data inside user on a booking
 router.put('/bookings', isLoggedIn, async (req, res) => {
     try {
         const { bookingId, bookedPlace } = req.body;
         const userId = req.user.id;
-        const { bookings, bookedPlaces } = await User.findById(userId);
-        const updatedAttributes = {
-            bookings: [...bookings, bookingId],
-            bookedPlaces: [...bookedPlaces, bookedPlace]
-        }
-        const updatedUser = await User.findByIdAndUpdate(userId, { $set: updatedAttributes });
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                $addToSet: {
+                    bookings: bookingId,
+                    bookedPlaces: bookedPlace,
+                },
+            },
+            { new: true }
+        );
         res.status(200).json(updatedUser);
     } catch (err) {
-        res.status(500).json(err.message);
+        console.error('Update bookings error:', err);
+        res.status(500).json({ error: err.message });
     }
-})
-//routes to delete any booking details from the user 
+});
+
+// Routes to delete any booking details from the user
 router.delete('/bookings', isLoggedIn, async (req, res) => {
     try {
         const { placeId, bookingId } = req.body;
         const userId = req.user.id;
-        const { bookedPlaces, bookings } = await User.findById(userId);
-        const updatedBookedPlaces = bookedPlaces.filter(id => id.toString() !== placeId);
-        const updatedBookings = bookings.filter(id => id.toString() !== bookingId);
-        await User.findByIdAndUpdate(userId, { $set: { bookedPlaces: updatedBookedPlaces, bookings: updatedBookings } })
-        res.status(200).json("User Bookings Update Successfully");
-        console.log(`${userId} canceled the booking ${bookings[0]}` )
-    } catch (e) {
-        res.status(500).json(e.message);
+        await User.findByIdAndUpdate(
+            userId,
+            {
+                $pull: {
+                    bookedPlaces: placeId,
+                    bookings: bookingId,
+                },
+            },
+            { new: true }
+        );
+        res.status(200).json('User Bookings Updated Successfully');
+    } catch (err) {
+        console.error('Delete booking error:', err);
+        res.status(500).json({ error: err.message });
     }
-})
+});
 
 module.exports = router;
