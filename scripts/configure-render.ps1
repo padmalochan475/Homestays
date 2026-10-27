@@ -7,7 +7,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = (Resolve-Path (Join-Path $scriptDir '..')).Path
 $renderFile = Join-Path $root 'render.yaml'
 
 if (-not (Test-Path $renderFile)) {

@@ -12,6 +12,6 @@ jobs:
     steps:
       - name: Ping Live API Health Endpoint
         run: |
-          API_URL="${{ vars.LIVE_API_URL || 'https://homestays-api.onrender.com' }}"
+          API_URL="${{ vars.LIVE_API_URL || 'https://padmalochan-homestays-api.onrender.com' }}"
           echo "Pinging $API_URL/health..."
           curl -s -f -m 30 "$API_URL/health" || echo "Ping dispatched (server waking up)"
