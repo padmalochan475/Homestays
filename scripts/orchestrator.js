@@ -4,7 +4,7 @@
  * ════════════════════════════════════════════════════════════════════════════════
  *   - Auto-checks and installs dependencies for both backend & frontend
  *   - Manages stateful checkpoints (.homestays_state.json) for seamless resume
- *   - Port Sentinel: Detects & kills orphaned processes on ports 4000 and 5173
+ *   - Port Sentinel: Detects & kills orphaned processes on API port 4000
  *   - Database Agent: Only asks user for credentials if not yet configured/valid
  *   - Seeding Agent: Pre-populates sample luxury homestays and demo host user
  *   - Runtime Supervisor: Spawns servers, monitors health, auto-opens browser
@@ -115,7 +115,7 @@ function setEnvValue(filePath, key, value) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AGENT 1: PORT SENTINEL AGENT (Free port 4000 & 5173 from zombie processes)
+// AGENT 1: PORT SENTINEL AGENT (Free API port 4000 from zombie processes)
 // ─────────────────────────────────────────────────────────────────────────────
 function freePort(port) {
     try {
@@ -212,7 +212,7 @@ function configureEnvironment(state) {
 
     // 3. Port & URL defaults
     setEnvValue(apiEnvPath, 'PORT', '4000');
-    setEnvValue(apiEnvPath, 'CLIENT_URL', 'http://localhost:5173,http://127.0.0.1:5173');
+    setEnvValue(apiEnvPath, 'CLIENT_URL', 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000');
     setEnvValue(clientEnvPath, 'VITE_API_BASE_URL', 'http://localhost:4000');
 
     saveState({ env_configured: true });
@@ -368,17 +368,35 @@ function launchApplication() {
     print('  🚀 STARTING HOMESTAYS FULLSTACK SERVERS', c.green + c.bright);
     print('═'.repeat(68) + c.reset);
 
-    // Free ports 4000 and 5173
+    // Free backend API port 4000
     freePort(4000);
-    freePort(5173);
 
     // Start API
     printAgent('SupervisorAgent', 'Starting Express API server on port 4000...');
     const apiProc = spawn(npmCmd, ['start'], { cwd: apiDir, stdio: 'inherit', shell: true });
 
-    // Start Client
-    printAgent('SupervisorAgent', 'Starting Vite frontend client on port 5173 (http://localhost:5173)...');
-    const clientProc = spawn(npmCmd, ['run', 'dev', '--', '--host', 'localhost', '--port', '5173'], { cwd: clientDir, stdio: 'inherit', shell: true });
+    // Start Client dynamically without hardcoded port
+    printAgent('SupervisorAgent', 'Starting Vite frontend client (dynamic port auto-detection)...');
+    const clientProc = spawn(npmCmd, ['run', 'dev'], { cwd: clientDir, stdio: ['inherit', 'pipe', 'pipe'], shell: true });
+
+    let detectedClientUrl = 'http://localhost:5173';
+
+    if (clientProc.stdout) {
+        clientProc.stdout.on('data', (chunk) => {
+            process.stdout.write(chunk);
+            const clean = chunk.toString().replace(/\x1b\[[0-9;]*m/g, '');
+            const match = clean.match(/https?:\/\/(?:localhost|127\.0\.0\.1):(\d+)/i);
+            if (match) {
+                detectedClientUrl = match[0].replace(/\/+$/, '');
+            }
+        });
+    }
+
+    if (clientProc.stderr) {
+        clientProc.stderr.on('data', (chunk) => {
+            process.stderr.write(chunk);
+        });
+    }
 
     let opened = false;
     const pollHealth = () => {
@@ -389,15 +407,15 @@ function launchApplication() {
                 print('\n' + c.green + c.bright + '╔══════════════════════════════════════════════════════════════════╗');
                 print('║       🎉 HOMESTAYS IS RUNNING AND PRESENTATION-READY!           ║');
                 print('╚══════════════════════════════════════════════════════════════════╝' + c.reset);
-                print(`  🌐 Web App:         ${c.bright}${c.white}http://localhost:5173${c.reset}`);
+                print(`  🌐 Web App:         ${c.bright}${c.white}${detectedClientUrl}${c.reset}`);
                 print(`  ⚡ API Endpoint:    ${c.white}http://localhost:4000/health${c.reset}`);
                 print(`  🔑 Demo Host Login: ${c.cyan}${c.bright}demo@homestays.com${c.reset} / ${c.cyan}Demo@123${c.reset}`);
                 print(`  📲 Demo Mode:       ${c.yellow}OTP codes are logged to console and pre-filled${c.reset}`);
                 print(c.green + '═'.repeat(68) + c.reset);
-                print('\nOpening application in your default web browser...\n', c.cyan);
+                print(`\nOpening application in your default web browser (${detectedClientUrl})...\n`, c.cyan);
 
                 const openCmd = isWindows ? 'start' : process.platform === 'darwin' ? 'open' : 'xdg-open';
-                spawn(openCmd, ['http://localhost:5173'], { shell: true });
+                spawn(openCmd, [detectedClientUrl], { shell: true });
             }
         });
         req.on('error', () => {
@@ -412,7 +430,12 @@ function launchApplication() {
         try {
             if (isWindows) {
                 freePort(4000);
-                freePort(5173);
+                if (apiProc && apiProc.pid) {
+                    try { execSync(`taskkill /F /T /PID ${apiProc.pid}`, { stdio: 'ignore' }); } catch (e) {}
+                }
+                if (clientProc && clientProc.pid) {
+                    try { execSync(`taskkill /F /T /PID ${clientProc.pid}`, { stdio: 'ignore' }); } catch (e) {}
+                }
             } else {
                 apiProc.kill('SIGTERM');
                 clientProc.kill('SIGTERM');

@@ -117,7 +117,7 @@ HomeStays features a built-in stateful **Autonomous Multi-Agent System** (`scrip
 | Agent | Responsibility |
 |---|---|
 | **System Agent** | Auto-detects Node.js LTS (>= 18). If missing on Windows, auto-installs it silently via winget / official MSI. |
-| **Port Sentinel** | Checks ports `4000` (API) and `5173` (Client). If occupied by zombie/orphaned Node processes, automatically frees them (`EADDRINUSE` immune). |
+| **Port Sentinel** | Checks API port `4000` and frees it if occupied by zombie/orphaned Node processes (`EADDRINUSE` immune). Frontend client port is dynamically auto-detected. |
 | **Dependency Agent** | Validates backend and frontend npm dependencies. Installs missing packages in parallel. |
 | **Config & Security Agent** | Auto-generates cryptographically secure 64-character `JWT_SECRET`, configures CORS, and synchronizes `.env`. |
 | **Database Agent** | **Only asks user for credentials if needed**. Pings existing connection; if valid, skips instantly. If missing or invalid, prompts with targeted diagnostic assistance (Atlas `0.0.0.0/0` whitelist, campus Wi-Fi port blocking). |
@@ -182,7 +182,7 @@ This instantly configures [`render.yaml`](./render.yaml), `.github/workflows/kee
 |---|---|---|
 | `PORT` | API listen port | `4000` |
 | `DB_URL` | MongoDB connection URI | `mongodb+srv://user:pass@cluster0...` |
-| `CLIENT_URL` | Permitted frontend origins | `http://localhost:5173,http://127.0.0.1:5173` |
+| `CLIENT_URL` | Permitted frontend origins (all localhost ports auto-allowed by CORS) | `http://localhost:5173,http://127.0.0.1:5173` |
 | `JWT_SECRET` | Token signature secret | *Auto-generated 64-character key* |
 | `AWS_REGION` | AWS S3 Bucket Region | *(Optional, falls back to disk)* |
 | `BUCKET_NAME` | AWS S3 Bucket Name | *(Optional, falls back to disk)* |
