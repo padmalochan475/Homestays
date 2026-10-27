@@ -377,8 +377,8 @@ function launchApplication() {
     const apiProc = spawn(npmCmd, ['start'], { cwd: apiDir, stdio: 'inherit', shell: true });
 
     // Start Client
-    printAgent('SupervisorAgent', 'Starting Vite frontend client on port 5173...');
-    const clientProc = spawn(npmCmd, ['run', 'dev', '--', '--host', '127.0.0.1'], { cwd: clientDir, stdio: 'inherit', shell: true });
+    printAgent('SupervisorAgent', 'Starting Vite frontend client on port 5173 (http://localhost:5173)...');
+    const clientProc = spawn(npmCmd, ['run', 'dev', '--', '--host', 'localhost', '--port', '5173'], { cwd: clientDir, stdio: 'inherit', shell: true });
 
     let opened = false;
     const pollHealth = () => {
