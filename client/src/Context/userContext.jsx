@@ -11,7 +11,8 @@ export function UserContextProvider({ children }) {
     const fetchUser = async () => {
       try {
         const { data } = await axios.get("/user/profile");
-        setUser(data);
+        const normalized = data ? { ...data, _id: data._id || data.id, id: data.id || data._id } : null;
+        setUser(normalized);
       } catch (error) {
         if (error.response?.status !== 401) {
           console.error("Unable to load the current user", error);

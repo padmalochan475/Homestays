@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import AddressLink from "../Components/AddressLink";
 import PlaceGallery from "../Components/PlaceGallery";
 import PerksOffers from "../Components/PerksOffers";
@@ -72,9 +72,29 @@ const SinglePlacePage = () => {
               </div>
             </div>
             <div className="mt-2 h-fit">
-              {(!user || (user && user.id !== place.owner)) && (
-                <BookingWidget place={place} alreadyBooked={alreadyBooked} />
-              )}
+              {(() => {
+                const currentUserId = String(user?.id || user?._id || "");
+                const placeOwnerId = String(place?.owner?._id || place?.owner || "");
+                const isOwner = Boolean(currentUserId && currentUserId === placeOwnerId);
+
+                if (isOwner) {
+                  return (
+                    <div className="bg-white p-6 rounded-2xl border text-center shadow-md">
+                      <div className="text-pink text-3xl mb-2">🏡</div>
+                      <h3 className="text-lg font-bold text-gray-800">Your Property Listing</h3>
+                      <p className="text-sm text-gray-500 mt-1 mb-4">You are the registered host of this homestay.</p>
+                      <Link
+                        to={`/account/places/${place._id}`}
+                        className="inline-block bg-pink text-white font-semibold px-6 py-2 rounded-xl text-sm hover:scale-105 transition-all shadow-sm"
+                      >
+                        Edit Accommodation
+                      </Link>
+                    </div>
+                  );
+                }
+
+                return <BookingWidget place={place} alreadyBooked={alreadyBooked} />;
+              })()}
             </div>
           </div>
           {place.extraInfo && (

@@ -47,6 +47,7 @@ router.post('/register', async (req, res) => {
         const userResponse = newUser.toObject();
         delete userResponse.password;
         userResponse.token = token;
+        userResponse.id = newUser._id;
         res.json(userResponse);
     } catch (e) {
         console.error('Registration error:', e);
@@ -92,6 +93,7 @@ router.post('/login', async (req, res) => {
         const userResponse = user.toObject();
         delete userResponse.password;
         userResponse.token = token;
+        userResponse.id = user._id;
         return res.json(userResponse);
     } catch (err) {
         console.error('Login error:', err);
@@ -157,7 +159,7 @@ router.get('/allusers', async (_req, res) => {
 
 // Route to get data for user profile
 router.get('/profile', isLoggedIn, (req, res) => {
-    res.json(req.user);
+    res.json({ ...req.user, _id: req.user.id });
 });
 
 // Route to update add bookings and bookedPlaces data inside user on a booking

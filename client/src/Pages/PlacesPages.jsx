@@ -31,12 +31,15 @@ const PlacesPages = () => {
   }, [refresh]);
 
   const removePlace = async (placeId) => {
+    if (!window.confirm("Are you sure you want to delete this accommodation listing? All associated reservations will also be removed.")) {
+      return;
+    }
     try {
       await axios.delete("/place", { data: { placeId } });
       toast.success("Place deleted successfully");
       setRefresh(!refresh);
     } catch (err) {
-      toast.error("Failed to delete place");
+      toast.error(err.response?.data?.error || "Failed to delete place");
       console.error(err.message);
     }
   };
