@@ -88,7 +88,8 @@ const ensureDefaultAccounts = async () => {
         const hostEmail = (process.env.HOST_EMAIL || 'demo@homestays.com').toLowerCase().trim();
         const hostPw = process.env.HOST_PASSWORD || 'Demo@123';
 
-        const existingAdmin = await User.findOne({ email: adminEmail });
+        // 1. Sync Administrator Account
+        const existingAdmin = await User.findOne({ email: adminEmail }).select('+password');
         if (!existingAdmin) {
             await User.create({
                 name: process.env.ADMIN_NAME || 'Platform Administrator',
@@ -96,13 +97,25 @@ const ensureDefaultAccounts = async () => {
                 password: bcrypt.hashSync(adminPw, 10),
                 role: 'admin',
             });
-            console.log(`[Auto-Init] Verified and created default administrator: ${adminEmail}`);
-        } else if (existingAdmin.role !== 'admin') {
-            existingAdmin.role = 'admin';
-            await existingAdmin.save();
+            console.log(`[Auto-Init] Verified and created default administrator in MongoDB: ${adminEmail}`);
+        } else {
+            let needsSave = false;
+            if (existingAdmin.role !== 'admin') {
+                existingAdmin.role = 'admin';
+                needsSave = true;
+            }
+            if (adminPw && !bcrypt.compareSync(adminPw, existingAdmin.password)) {
+                existingAdmin.password = bcrypt.hashSync(adminPw, 10);
+                needsSave = true;
+                console.log(`[Auto-Sync] Synchronized administrator password in MongoDB to match api/.env (${adminEmail})`);
+            }
+            if (needsSave) {
+                await existingAdmin.save();
+            }
         }
 
-        const existingHost = await User.findOne({ email: hostEmail });
+        // 2. Sync Host Account
+        const existingHost = await User.findOne({ email: hostEmail }).select('+password');
         if (!existingHost) {
             await User.create({
                 name: process.env.HOST_NAME || 'Demo Host',
@@ -110,7 +123,21 @@ const ensureDefaultAccounts = async () => {
                 password: bcrypt.hashSync(hostPw, 10),
                 role: 'admin',
             });
-            console.log(`[Auto-Init] Verified and created default host account: ${hostEmail}`);
+            console.log(`[Auto-Init] Verified and created default host account in MongoDB: ${hostEmail}`);
+        } else {
+            let needsSave = false;
+            if (existingHost.role !== 'admin') {
+                existingHost.role = 'admin';
+                needsSave = true;
+            }
+            if (hostPw && !bcrypt.compareSync(hostPw, existingHost.password)) {
+                existingHost.password = bcrypt.hashSync(hostPw, 10);
+                needsSave = true;
+                console.log(`[Auto-Sync] Synchronized host password in MongoDB to match api/.env (${hostEmail})`);
+            }
+            if (needsSave) {
+                await existingHost.save();
+            }
         }
     } catch (e) {
         console.warn('[Auto-Init] Notice during default account check:', e.message);

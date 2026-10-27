@@ -177,6 +177,36 @@ router.put('/', isLoggedIn, async (req, res) => {
             newAttributes.password = bcrypt.hashSync(newPassword, bcryptSalt);
         }
         const updatedUser = await User.findByIdAndUpdate(userId, { $set: newAttributes }, { new: true });
+
+        // If the admin or host changes password via UI, keep api/.env synchronized!
+        if (newPassword && updatedUser) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const envPath = path.join(__dirname, '../.env');
+                if (fs.existsSync(envPath)) {
+                    let envContent = fs.readFileSync(envPath, 'utf8');
+                    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@homestays.com').toLowerCase().trim();
+                    const hostEmail = (process.env.HOST_EMAIL || 'demo@homestays.com').toLowerCase().trim();
+                    const currentEmail = (updatedUser.email || '').toLowerCase().trim();
+
+                    if (currentEmail === adminEmail) {
+                        envContent = envContent.replace(/^ADMIN_PASSWORD=.*$/m, `ADMIN_PASSWORD=${newPassword}`);
+                        process.env.ADMIN_PASSWORD = newPassword;
+                        fs.writeFileSync(envPath, envContent, 'utf8');
+                        console.log(`[Auto-Sync] Synchronized new admin password from UI into api/.env`);
+                    } else if (currentEmail === hostEmail) {
+                        envContent = envContent.replace(/^HOST_PASSWORD=.*$/m, `HOST_PASSWORD=${newPassword}`);
+                        process.env.HOST_PASSWORD = newPassword;
+                        fs.writeFileSync(envPath, envContent, 'utf8');
+                        console.log(`[Auto-Sync] Synchronized new host password from UI into api/.env`);
+                    }
+                }
+            } catch (envErr) {
+                console.warn('[Auto-Sync] Notice syncing .env from UI update:', envErr.message);
+            }
+        }
+
         res.status(200).json(updatedUser);
     } catch (err) {
         console.error('Update profile error:', err);
