@@ -33,7 +33,7 @@ const Header = () => {
         </Link>
       </div>
 
-      <div className="hidden flex items-center border border-gray-300 rounded-full px-2 gap-1 shadow-md shadow-gray-300 sm:gap-3 sm:flex sm:px-4">
+      <div className="hidden items-center border border-gray-300 rounded-full px-2 gap-1 shadow-md shadow-gray-300 sm:gap-3 sm:flex sm:px-4">
         <div className="font-bold text-sm">Anywhere</div>
         <div className="border border-gray-300 h-5"></div>
         <div className="font-bold text-sm">Any week</div>

@@ -49,10 +49,18 @@ export default function BookingWidget({ place }) {
   }
 
   const formattedDate = (date) => {
-    return format(
-      parse(date.toString(), "dd/MM/yyyy", new Date()),
-      "dd/MM/yyyy"
-    );
+    if (!date) return "";
+    if (typeof date === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
+      return date;
+    }
+    try {
+      return format(
+        parse(date.toString(), "dd/MM/yyyy", new Date()),
+        "dd/MM/yyyy"
+      );
+    } catch (e) {
+      return String(date);
+    }
   };
 
   async function bookThisPlace() {

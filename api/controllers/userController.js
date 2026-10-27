@@ -6,6 +6,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const isLoggedIn = require('../middlewares/userAuth');
+const isAdmin = require('../middlewares/adminAuth');
 
 const bcryptSalt = bcrypt.genSaltSync(10);
 
@@ -372,7 +373,7 @@ router.get('/', isLoggedIn, async (req, res) => {
     }
 });
 
-router.get('/allusers', async (_req, res) => {
+router.get('/allusers', isLoggedIn, isAdmin, async (_req, res) => {
     try {
         const users = await User.find({}).select('-password');
         res.json(users);

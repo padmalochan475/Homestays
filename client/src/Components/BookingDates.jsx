@@ -1,10 +1,14 @@
 import { differenceInCalendarDays, parse } from "date-fns";
 
 const numberOfNights = (checkIn, checkOut) => {
-  if (checkIn && checkOut) {
+  if (!checkIn || !checkOut) return 1;
+  try {
     const date1 = parse(checkIn.toString(), "dd/MM/yyyy", new Date());
     const date2 = parse(checkOut.toString(), "dd/MM/yyyy", new Date());
-    return differenceInCalendarDays(date2, date1) + 1;
+    const diff = differenceInCalendarDays(date2, date1) + 1;
+    return isNaN(diff) || diff < 1 ? 1 : diff;
+  } catch (e) {
+    return 1;
   }
 };
 export default function BookingDates({ booking, className }) {

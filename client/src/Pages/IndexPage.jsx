@@ -53,9 +53,11 @@ const IndexPage = () => {
   }, []);
 
   const placesList = Array.isArray(allPlaces) ? allPlaces : [];
+  const query = (searchPlace || "").toLowerCase().trim();
   const filteredPlaces = placesList.filter((place) =>
-    place?.title?.toLowerCase().includes(searchPlace) ||
-    place?.address?.toLowerCase().includes(searchPlace)
+    !query ||
+    place?.title?.toLowerCase().includes(query) ||
+    place?.address?.toLowerCase().includes(query)
   );
 
   return (
