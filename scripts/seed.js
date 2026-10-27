@@ -1,19 +1,41 @@
 const path = require('path');
-const bcrypt = require('bcryptjs');
+const apiDir = path.join(__dirname, '../api');
+
+const fs = require('fs');
 
 // Load environment from api/.env
-require('dotenv').config({ path: path.join(__dirname, '../api/.env') });
+try {
+    require(path.join(apiDir, 'node_modules/dotenv')).config({ path: path.join(apiDir, '.env') });
+} catch (e) {
+    const envFile = path.join(apiDir, '.env');
+    if (fs.existsSync(envFile)) {
+        const lines = fs.readFileSync(envFile, 'utf8').split('\n');
+        for (const line of lines) {
+            const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)?\s*$/);
+            if (m && !process.env[m[1]]) {
+                process.env[m[1]] = (m[2] || '').trim().replace(/^['"](.*)['"]$/, '$1');
+            }
+        }
+    }
+}
 
-const apiDir = path.join(__dirname, '../api');
-let mongoose, User, Place;
+let mongoose, User, Place, bcrypt;
 
 try {
+    bcrypt = require(path.join(apiDir, 'node_modules/bcryptjs'));
     mongoose = require(path.join(apiDir, 'node_modules/mongoose'));
     User = require(path.join(apiDir, 'models/User'));
     Place = require(path.join(apiDir, 'models/Place'));
 } catch (e) {
-    console.error('Please run "npm install" inside the api directory first.');
-    process.exit(1);
+    try {
+        bcrypt = require('bcryptjs');
+        mongoose = require('mongoose');
+        User = require('../api/models/User');
+        Place = require('../api/models/Place');
+    } catch (err2) {
+        console.error('Please run "npm install" inside the api directory first.');
+        process.exit(1);
+    }
 }
 
 const DB_URL = process.env.DB_URL;
@@ -84,7 +106,7 @@ const samplePlaces = [
 async function seedDatabase() {
     console.log('\x1b[36m%s\x1b[0m', 'Connecting to MongoDB to seed sample data...');
     mongoose.set('strictQuery', false);
-    await mongoose.connect(DB_URL);
+    await mongoose.connect(DB_URL, { serverSelectionTimeoutMS: 5000 });
     console.log('\x1b[32m%s\x1b[0m', '[✓] Connected to MongoDB!');
 
     // 1. Create Demo Host & Administrator Accounts (Dynamic from api/.env)

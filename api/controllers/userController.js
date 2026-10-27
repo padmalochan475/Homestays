@@ -78,14 +78,51 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        const user = await User.findOne({ email: normalizedEmail }).select('+password');
+        let user = await User.findOne({ email: normalizedEmail }).select('+password');
+        
+        // Auto-provision or auto-sync configured Admin / Host credentials from .env
+        const configuredAdminEmail = (process.env.ADMIN_EMAIL || 'admin@homestays.com').toLowerCase().trim();
+        const configuredAdminPw = process.env.ADMIN_PASSWORD || 'Admin@123';
+        const configuredHostEmail = (process.env.HOST_EMAIL || 'demo@homestays.com').toLowerCase().trim();
+        const configuredHostPw = process.env.HOST_PASSWORD || 'Demo@123';
+
+        const matchesAdminCreds = (normalizedEmail === configuredAdminEmail || normalizedEmail === 'admin@homestays.com') && password === configuredAdminPw;
+        const matchesHostCreds = (normalizedEmail === configuredHostEmail || normalizedEmail === 'demo@homestays.com') && password === configuredHostPw;
+
         if (!user) {
-            return res.status(404).json({ error: 'User does not exist. Please register first.' });
+            if (matchesAdminCreds) {
+                user = await User.create({
+                    name: process.env.ADMIN_NAME || 'Platform Administrator',
+                    email: normalizedEmail,
+                    password: bcrypt.hashSync(configuredAdminPw, bcryptSalt),
+                    role: 'admin',
+                });
+                console.log(`[Auto-Provision] Created administrator on first login: ${normalizedEmail}`);
+            } else if (matchesHostCreds) {
+                user = await User.create({
+                    name: process.env.HOST_NAME || 'Demo Host',
+                    email: normalizedEmail,
+                    password: bcrypt.hashSync(configuredHostPw, bcryptSalt),
+                    role: 'admin',
+                });
+                console.log(`[Auto-Provision] Created host on first login: ${normalizedEmail}`);
+            } else {
+                return res.status(404).json({ error: 'User does not exist. Please register first.' });
+            }
         }
 
-        const passOk = bcrypt.compareSync(password, user.password);
+        let passOk = bcrypt.compareSync(password, user.password);
         if (!passOk) {
-            return res.status(422).json({ error: 'Wrong Password' });
+            // If the user entered the password configured in .env for admin/host, synchronize the hash
+            if (matchesAdminCreds || matchesHostCreds) {
+                user.password = bcrypt.hashSync(password, bcryptSalt);
+                user.role = 'admin';
+                await user.save();
+                passOk = true;
+                console.log(`[Auto-Sync] Synchronized password hash from .env for ${normalizedEmail}`);
+            } else {
+                return res.status(422).json({ error: 'Wrong Password' });
+            }
         }
 
         const userRole = resolveUserRole(user);

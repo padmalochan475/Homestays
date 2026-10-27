@@ -79,6 +79,44 @@ app.get('/health', (_req, res) => {
 
 app.use('', require('./routes'));
 
+const ensureDefaultAccounts = async () => {
+    try {
+        const User = require('./models/User');
+        const bcrypt = require('bcryptjs');
+        const adminEmail = (process.env.ADMIN_EMAIL || 'admin@homestays.com').toLowerCase().trim();
+        const adminPw = process.env.ADMIN_PASSWORD || 'Admin@123';
+        const hostEmail = (process.env.HOST_EMAIL || 'demo@homestays.com').toLowerCase().trim();
+        const hostPw = process.env.HOST_PASSWORD || 'Demo@123';
+
+        const existingAdmin = await User.findOne({ email: adminEmail });
+        if (!existingAdmin) {
+            await User.create({
+                name: process.env.ADMIN_NAME || 'Platform Administrator',
+                email: adminEmail,
+                password: bcrypt.hashSync(adminPw, 10),
+                role: 'admin',
+            });
+            console.log(`[Auto-Init] Verified and created default administrator: ${adminEmail}`);
+        } else if (existingAdmin.role !== 'admin') {
+            existingAdmin.role = 'admin';
+            await existingAdmin.save();
+        }
+
+        const existingHost = await User.findOne({ email: hostEmail });
+        if (!existingHost) {
+            await User.create({
+                name: process.env.HOST_NAME || 'Demo Host',
+                email: hostEmail,
+                password: bcrypt.hashSync(hostPw, 10),
+                role: 'admin',
+            });
+            console.log(`[Auto-Init] Verified and created default host account: ${hostEmail}`);
+        }
+    } catch (e) {
+        console.warn('[Auto-Init] Notice during default account check:', e.message);
+    }
+};
+
 const startServer = async () => {
     if (!process.env.JWT_SECRET) {
         process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('base64url');
@@ -88,6 +126,7 @@ const startServer = async () => {
     if (process.env.DB_URL) {
         try {
             await connectWithDB();
+            await ensureDefaultAccounts();
         } catch (dbErr) {
             console.warn('\x1b[33m%s\x1b[0m', '[Warning] Initial MongoDB connection failed: ' + dbErr.message);
             console.warn('\x1b[33m%s\x1b[0m', 'Server will remain active for health checks and retry connecting when requests arrive.');
