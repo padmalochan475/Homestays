@@ -16,7 +16,14 @@ router.post('/', isLoggedIn, async (req, res) => {
             return res.status(400).json({ error: 'Please provide all booking details (place, dates, name, phone).' });
         }
 
-        // Validate that check-in date is not in the past and check-out is after check-in
+        // 1. Verify accommodation exists
+        const placeDoc = await Place.findById(place);
+        if (!placeDoc) {
+            return res.status(404).json({ error: 'Accommodation listing not found.' });
+        }
+
+        // 2. Validate dates format and check-in >= today
+        let numberOfNights = 1;
         try {
             const partsIn = checkIn.split('/');
             const partsOut = checkOut.split('/');
@@ -32,20 +39,49 @@ router.post('/', isLoggedIn, async (req, res) => {
                 if (checkOutDate < checkInDate) {
                     return res.status(400).json({ error: 'Check-out date must be on or after check-in date.' });
                 }
+
+                numberOfNights = Math.max(1, Math.round((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)) + 1);
             }
         } catch (dateErr) {
             console.warn('Booking date validation notice:', dateErr.message);
         }
 
+        // 3. Conflict prevention: verify requested dates are not already reserved
+        const requestedDates = allDaysBetweenIntervals(checkIn, checkOut);
+        const bookedSet = new Set(placeDoc.bookedDates || []);
+        const hasConflict = requestedDates.some(d => bookedSet.has(d));
+        if (hasConflict) {
+            return res.status(409).json({ error: 'This accommodation is already reserved for one or more dates in your selected range.' });
+        }
+
+        // 4. Validate guest count against accommodation maximum
+        const guests = Math.max(1, Number(numberOfGuests) || 1);
+        if (placeDoc.maxGuests && guests > placeDoc.maxGuests) {
+            return res.status(400).json({ error: `Maximum guests permitted for this accommodation is ${placeDoc.maxGuests}.` });
+        }
+
+        // 5. Authoritative price calculation based on verified database rate
+        const authoritativePrice = numberOfNights * (placeDoc.price || Number(price) || 0);
+
+        // 6. Create booking record
         const booking = await Booking.create({
             user: userId,
             place,
             checkIn,
             checkOut,
-            numberOfGuests: Number(numberOfGuests) || 1,
+            numberOfGuests: guests,
             name: name.trim(),
-            price: Number(price) || 0,
+            price: authoritativePrice,
             phone: phone.trim(),
+        });
+
+        // 7. Atomic update: reserve dates in Place and link to User
+        await Place.findByIdAndUpdate(place, { $addToSet: { bookedDates: { $each: requestedDates } } });
+        await User.findByIdAndUpdate(userId, {
+            $addToSet: {
+                bookings: booking._id,
+                bookedPlaces: place,
+            }
         });
 
         res.status(201).json(booking);

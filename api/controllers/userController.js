@@ -98,12 +98,13 @@ const resolveUserRole = (u) => {
 // Route to handle new registration for user
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
-    const normalizedEmail = (email || '').toLowerCase().trim();
-    const normalizedName = (name || '').trim();
 
-    if (!normalizedEmail || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
+        return res.status(400).json({ error: 'Valid email and password are required.' });
     }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedName = typeof name === 'string' ? name.trim() : 'User';
 
     try {
         const existing = await User.findOne({ email: normalizedEmail });
@@ -149,11 +150,12 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        const normalizedEmail = (email || '').toLowerCase().trim();
 
-        if (!normalizedEmail || !password) {
-            return res.status(400).json({ error: 'Email and password are required' });
+        if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
+            return res.status(400).json({ error: 'Valid email and password are required.' });
         }
+
+        const normalizedEmail = email.toLowerCase().trim();
 
         const creds = getEnvCredentials();
         let user = await User.findOne({ email: normalizedEmail }).select('+password');
