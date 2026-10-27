@@ -35,6 +35,14 @@ services:
         sync: false
       - key: S3_SECRET_ACCESS_KEY
         sync: false
+      - key: ADMIN_EMAIL
+        value: admin@homestays.com
+      - key: ADMIN_PASSWORD
+        value: Admin@123
+      - key: HOST_EMAIL
+        value: demo@homestays.com
+      - key: HOST_PASSWORD
+        value: Demo@123
 
   - type: web
     name: padmalochan-homestays-client

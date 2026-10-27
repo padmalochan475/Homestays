@@ -215,6 +215,14 @@ function configureEnvironment(state) {
     setEnvValue(apiEnvPath, 'CLIENT_URL', 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000');
     setEnvValue(clientEnvPath, 'VITE_API_BASE_URL', 'http://localhost:4000');
 
+    // 4. Default Admin & Host Credentials (customizable in api/.env)
+    if (!getEnvValue(apiEnvPath, 'ADMIN_NAME')) setEnvValue(apiEnvPath, 'ADMIN_NAME', 'Platform Administrator');
+    if (!getEnvValue(apiEnvPath, 'ADMIN_EMAIL')) setEnvValue(apiEnvPath, 'ADMIN_EMAIL', 'admin@homestays.com');
+    if (!getEnvValue(apiEnvPath, 'ADMIN_PASSWORD')) setEnvValue(apiEnvPath, 'ADMIN_PASSWORD', 'Admin@123');
+    if (!getEnvValue(apiEnvPath, 'HOST_NAME')) setEnvValue(apiEnvPath, 'HOST_NAME', 'Demo Host');
+    if (!getEnvValue(apiEnvPath, 'HOST_EMAIL')) setEnvValue(apiEnvPath, 'HOST_EMAIL', 'demo@homestays.com');
+    if (!getEnvValue(apiEnvPath, 'HOST_PASSWORD')) setEnvValue(apiEnvPath, 'HOST_PASSWORD', 'Demo@123');
+
     saveState({ env_configured: true });
     printAgent('ConfigAgent', 'Environment configuration & secrets synchronized.', 'success');
 }
@@ -404,13 +412,19 @@ function launchApplication() {
         const req = http.get('http://127.0.0.1:4000/health', (res) => {
             if (res.statusCode === 200 && !opened) {
                 opened = true;
+                const activeHostEmail = getEnvValue(apiEnvPath, 'HOST_EMAIL') || 'demo@homestays.com';
+                const activeHostPw = getEnvValue(apiEnvPath, 'HOST_PASSWORD') || 'Demo@123';
+                const activeAdminEmail = getEnvValue(apiEnvPath, 'ADMIN_EMAIL') || 'admin@homestays.com';
+                const activeAdminPw = getEnvValue(apiEnvPath, 'ADMIN_PASSWORD') || 'Admin@123';
+
                 print('\n' + c.green + c.bright + '╔══════════════════════════════════════════════════════════════════╗');
                 print('║       🎉 HOMESTAYS IS RUNNING AND PRESENTATION-READY!           ║');
                 print('╚══════════════════════════════════════════════════════════════════╝' + c.reset);
                 print(`  🌐 Web App:         ${c.bright}${c.white}${detectedClientUrl}${c.reset}`);
                 print(`  ⚡ API Endpoint:    ${c.white}http://localhost:4000/health${c.reset}`);
-                print(`  🔑 Host Account:    ${c.cyan}${c.bright}demo@homestays.com${c.reset} / ${c.cyan}Demo@123${c.reset}`);
-                print(`  🛡️ Admin Portal:    ${c.cyan}${c.bright}admin@homestays.com${c.reset} / ${c.cyan}Admin@123${c.reset} (or visit /admin)`);
+                print(`  🔑 Host Account:    ${c.cyan}${c.bright}${activeHostEmail}${c.reset} / ${c.cyan}${activeHostPw}${c.reset}`);
+                print(`  🛡️ Admin Portal:    ${c.cyan}${c.bright}${activeAdminEmail}${c.reset} / ${c.cyan}${activeAdminPw}${c.reset} (or visit /admin)`);
+                print(`  ⚙️ Edit In .env:    ${c.dim}Change ADMIN_EMAIL / ADMIN_PASSWORD anytime in api/.env${c.reset}`);
                 print(`  📲 Demo Mode:       ${c.yellow}OTP codes are logged to console and pre-filled${c.reset}`);
                 print(c.green + '═'.repeat(68) + c.reset);
                 print(`\nOpening application in your default web browser (${detectedClientUrl})...\n`, c.cyan);

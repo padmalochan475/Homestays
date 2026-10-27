@@ -7,6 +7,17 @@ const isLoggedIn = require('../middlewares/userAuth');
 
 const bcryptSalt = bcrypt.genSaltSync(10);
 
+const resolveUserRole = (u) => {
+    if (u?.role) return u.role;
+    const email = (u?.email || '').toLowerCase().trim();
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@homestays.com').toLowerCase().trim();
+    const hostEmail = (process.env.HOST_EMAIL || 'demo@homestays.com').toLowerCase().trim();
+    if (email === adminEmail || email === hostEmail || email === 'admin@homestays.com' || email === 'demo@homestays.com' || email.startsWith('admin@')) {
+        return 'admin';
+    }
+    return 'user';
+};
+
 // Route to handle new registration for user
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
@@ -29,7 +40,7 @@ router.post('/register', async (req, res) => {
             password: bcrypt.hashSync(password, bcryptSalt),
         });
 
-        const userRole = newUser.role || (newUser.email === 'demo@homestays.com' || newUser.email.startsWith('admin@') ? 'admin' : 'user');
+        const userRole = resolveUserRole(newUser);
         const jwtSecret = process.env.JWT_SECRET;
         const token = jwt.sign(
             { email: newUser.email, id: newUser._id, name: newUser.name, role: userRole },
@@ -77,7 +88,7 @@ router.post('/login', async (req, res) => {
             return res.status(422).json({ error: 'Wrong Password' });
         }
 
-        const userRole = user.role || (user.email === 'demo@homestays.com' || user.email.startsWith('admin@') ? 'admin' : 'user');
+        const userRole = resolveUserRole(user);
         const jwtSecret = process.env.JWT_SECRET;
         const token = jwt.sign(
             { email: user.email, id: user._id, name: user.name, role: userRole },
@@ -166,7 +177,7 @@ router.get('/profile', isLoggedIn, async (req, res) => {
     try {
         const fullUser = await User.findById(req.user.id);
         const email = (fullUser?.email || req.user?.email || '').toLowerCase();
-        const role = fullUser?.role || req.user?.role || (email === 'demo@homestays.com' || email.startsWith('admin@') ? 'admin' : 'user');
+        const role = resolveUserRole(fullUser || req.user);
         res.json({
             ...req.user,
             _id: req.user.id,

@@ -87,35 +87,47 @@ async function seedDatabase() {
     await mongoose.connect(DB_URL);
     console.log('\x1b[32m%s\x1b[0m', '[✓] Connected to MongoDB!');
 
-    // 1. Create Demo Host & Administrator Accounts
-    const demoEmail = 'demo@homestays.com';
-    let user = await User.findOne({ email: demoEmail });
+    // 1. Create Demo Host & Administrator Accounts (Dynamic from api/.env)
+    const hostEmail = (process.env.HOST_EMAIL || 'demo@homestays.com').toLowerCase().trim();
+    const hostPassword = process.env.HOST_PASSWORD || 'Demo@123';
+    const hostName = process.env.HOST_NAME || 'Demo Host';
+
+    let user = await User.findOne({ email: hostEmail });
     if (!user) {
-        const hashedPassword = bcrypt.hashSync('Demo@123', 10);
         user = await User.create({
-            name: 'Demo Host',
-            email: demoEmail,
-            password: hashedPassword,
+            name: hostName,
+            email: hostEmail,
+            password: bcrypt.hashSync(hostPassword, 10),
             role: 'admin',
         });
-        console.log('\x1b[32m%s\x1b[0m', `[✓] Created Demo Host User: ${demoEmail} (Password: Demo@123, Role: admin)`);
+        console.log('\x1b[32m%s\x1b[0m', `[✓] Created Host Account: ${hostEmail} (Password: ${hostPassword}, Role: admin)`);
     } else {
+        user.name = hostName;
+        user.password = bcrypt.hashSync(hostPassword, 10);
         user.role = 'admin';
         await user.save();
-        console.log('\x1b[33m%s\x1b[0m', `[*] Demo Host exists and verified as admin: ${demoEmail}`);
+        console.log('\x1b[33m%s\x1b[0m', `[*] Synchronized Host credentials: ${hostEmail}`);
     }
 
-    const adminEmail = 'admin@homestays.com';
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@homestays.com').toLowerCase().trim();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+    const adminName = process.env.ADMIN_NAME || 'Platform Administrator';
+
     let adminUser = await User.findOne({ email: adminEmail });
     if (!adminUser) {
-        const hashedPassword = bcrypt.hashSync('Admin@123', 10);
-        await User.create({
-            name: 'Platform Administrator',
+        adminUser = await User.create({
+            name: adminName,
             email: adminEmail,
-            password: hashedPassword,
+            password: bcrypt.hashSync(adminPassword, 10),
             role: 'admin',
         });
-        console.log('\x1b[32m%s\x1b[0m', `[✓] Created Dedicated Admin User: ${adminEmail} (Password: Admin@123, Role: admin)`);
+        console.log('\x1b[32m%s\x1b[0m', `[✓] Created Dedicated Admin Account: ${adminEmail} (Password: ${adminPassword}, Role: admin)`);
+    } else {
+        adminUser.name = adminName;
+        adminUser.password = bcrypt.hashSync(adminPassword, 10);
+        adminUser.role = 'admin';
+        await adminUser.save();
+        console.log('\x1b[33m%s\x1b[0m', `[*] Synchronized Admin credentials: ${adminEmail}`);
     }
 
     // 2. Create Sample Places
@@ -133,9 +145,9 @@ async function seedDatabase() {
 
     console.log('\x1b[32m%s\x1b[0m', `[✓] Successfully added ${createdCount} sample homestay listings!`);
     console.log('\n======================================================');
-    console.log(' Available Demo Credentials:');
-    console.log(' 1. Host Account:    demo@homestays.com   (Demo@123)');
-    console.log(' 2. Admin Portal:    admin@homestays.com  (Admin@123)');
+    console.log(' Active Credentials (Configured in api/.env):');
+    console.log(` 1. Host Account:    ${hostEmail}  (${hostPassword})`);
+    console.log(` 2. Admin Portal:    ${adminEmail} (${adminPassword})`);
     console.log('======================================================\n');
 
     await mongoose.disconnect();

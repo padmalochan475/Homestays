@@ -184,6 +184,12 @@ This instantly configures [`render.yaml`](./render.yaml), `.github/workflows/kee
 | `DB_URL` | MongoDB connection URI | `mongodb+srv://user:pass@cluster0...` |
 | `CLIENT_URL` | Permitted frontend origins (all localhost ports auto-allowed by CORS) | `http://localhost:5173,http://127.0.0.1:5173` |
 | `JWT_SECRET` | Token signature secret | *Auto-generated 64-character key* |
+| `ADMIN_NAME` | Dedicated Administrator display name | `Platform Administrator` |
+| `ADMIN_EMAIL` | Dedicated Administrator email (Access to `/admin`) | `admin@homestays.com` |
+| `ADMIN_PASSWORD` | Dedicated Administrator login password | `Admin@123` |
+| `HOST_NAME` | Sample Property Host display name | `Demo Host` |
+| `HOST_EMAIL` | Property Host email (Access to `/account/places`) | `demo@homestays.com` |
+| `HOST_PASSWORD` | Property Host login password | `Demo@123` |
 | `AWS_REGION` | AWS S3 Bucket Region | *(Optional, falls back to disk)* |
 | `BUCKET_NAME` | AWS S3 Bucket Name | *(Optional, falls back to disk)* |
 | `S3_ACCESS_KEY` | AWS S3 Access Key | *(Optional, falls back to disk)* |

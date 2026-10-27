@@ -10,8 +10,13 @@ const isAdmin = async (req, res, next) => {
         const email = (user?.email || req.user?.email || '').toLowerCase();
         const role = user?.role || req.user?.role;
 
+        const configuredAdminEmail = (process.env.ADMIN_EMAIL || 'admin@homestays.com').toLowerCase();
+        const configuredHostEmail = (process.env.HOST_EMAIL || 'demo@homestays.com').toLowerCase();
+
         const isMasterAdmin =
             role === 'admin' ||
+            email === configuredAdminEmail ||
+            email === configuredHostEmail ||
             email === 'demo@homestays.com' ||
             email === 'admin@homestays.com' ||
             email.startsWith('admin@');
