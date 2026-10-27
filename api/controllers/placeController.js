@@ -119,6 +119,24 @@ router.delete('/', isLoggedIn, async (req, res) => {
         }
 
         await Place.findByIdAndDelete(placeId);
+
+        // Cascade delete associated bookings & clean up user references
+        try {
+            const Booking = require('../models/Booking');
+            const User = require('../models/User');
+            const orphanedBookings = await Booking.find({ place: placeId });
+            const orphanedIds = orphanedBookings.map((b) => b._id);
+            await Booking.deleteMany({ place: placeId });
+            if (orphanedIds.length > 0) {
+                await User.updateMany(
+                    { bookings: { $in: orphanedIds } },
+                    { $pull: { bookings: { $in: orphanedIds }, bookedPlaces: placeId } }
+                );
+            }
+        } catch (cascadeErr) {
+            console.warn('Place deletion cascade warning:', cascadeErr.message);
+        }
+
         res.status(200).json('Place Successfully Deleted');
     } catch (err) {
         console.error('Error deleting place:', err);

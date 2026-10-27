@@ -80,18 +80,20 @@ app.get('/health', (_req, res) => {
 app.use('', require('./routes'));
 
 const startServer = async () => {
-    if (!process.env.DB_URL) {
-        throw new Error('DB_URL is required. Copy api/.env.example to api/.env and configure it.');
-    }
     if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET is required. Copy api/.env.example to api/.env and configure it.');
+        process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('base64url');
+        console.log('[Security] JWT_SECRET was missing; auto-generated secure token for current session.');
     }
 
-    try {
-        await connectWithDB();
-    } catch (dbErr) {
-        console.warn('\x1b[33m%s\x1b[0m', '[Warning] Initial MongoDB connection failed: ' + dbErr.message);
-        console.warn('\x1b[33m%s\x1b[0m', 'Server will remain active for health checks and retry connecting when requests arrive.');
+    if (process.env.DB_URL) {
+        try {
+            await connectWithDB();
+        } catch (dbErr) {
+            console.warn('\x1b[33m%s\x1b[0m', '[Warning] Initial MongoDB connection failed: ' + dbErr.message);
+            console.warn('\x1b[33m%s\x1b[0m', 'Server will remain active for health checks and retry connecting when requests arrive.');
+        }
+    } else {
+        console.warn('\x1b[31m%s\x1b[0m', '[Warning] DB_URL is not set. API is listening for /health probes, but database queries will fail until DB_URL is configured in .env.');
     }
 
     app.listen(PORT, () => {

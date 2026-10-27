@@ -66,7 +66,7 @@ Because Render requires globally unique subdomains (e.g. `yourname-api.onrender.
 ### Step 2.1: Run the Blueprint Customizer
 Open your terminal in the `HomeStays` root folder and run:
 ```powershell
-.\configure-render.ps1 -ProjectSlug "yourname-homestays"
+.\scripts\configure-render.ps1 -ProjectSlug "yourname-homestays"
 ```
 *(Replace `yourname-homestays` with your name or roll number, e.g. `rahul-2026`).*
 
@@ -105,8 +105,8 @@ Render will build both your backend API and frontend React client automatically 
 
 ### Step 3.4: Watch the Build
 Render will build both services:
-- **Backend API**: Takes about 1–2 minutes (`npm ci`).
-- **Frontend Client**: Takes about 1–2 minutes (`npm ci && npm run build`).
+- **Backend API**: Takes about 1–2 minutes (`npm install`).
+- **Frontend Client**: Takes about 1–2 minutes (`npm install && npm run build`).
 - Once finished, both services will display a green **Live** badge.
 
 ### Step 3.5: Note Your Live URLs

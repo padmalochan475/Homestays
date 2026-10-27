@@ -22,6 +22,11 @@ client/dist/
 api/uploads/*
 !api/uploads/.gitkeep
 
+# State and lock files
+.homestays_state.json
+.setup_state.json
+*.lock
+
 # Logs and system files
 .DS_Store
 *.log

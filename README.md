@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  A production-ready vacation rental and accommodation booking platform with comprehensive host property management, real-time date conflict handling, multi-channel authentication, and resilient cloud/local fallback architecture.
+  A production-grade vacation rental and accommodation booking platform with comprehensive host property management, real-time date conflict handling, multi-channel authentication, and resilient cloud/local fallback architecture.
 </p>
 
 ---
@@ -19,7 +19,8 @@
 ## 📑 Table of Contents
 - [✨ Key Features](#-key-features)
 - [🏛️ System Architecture](#️-system-architecture)
-- [🚀 Quick Start (Any System)](#-quick-start-any-system)
+- [🚀 1-Click Setup & Run (Any Machine)](#-1-click-setup--run-any-machine)
+- [🤖 Autonomous Multi-Agent & Resume Engine](#-autonomous-multi-agent--resume-engine)
 - [🌐 Live Deployment on Render](#-live-deployment-on-render)
 - [🔑 Environment Variables](#-environment-variables)
 - [🛡️ Built-In Invigilator Resiliency Features](#️-built-in-invigilator-resiliency-features)
@@ -78,123 +79,126 @@ flowchart TD
 
 ---
 
-## 🚀 Quick Start (One-Click for Students)
+## 🚀 1-Click Setup & Run (Any Machine)
 
-### 🎓 Option 1: Autonomous Student Assistant (Recommended)
-Simply **double-click** **`STUDENT_START_HERE.bat`** in the project folder!
-*(On macOS / Linux: run `npm run student`)*
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/padmalochan475/Homestays.git
+cd Homestays
+```
 
-**What this one file does on your behalf:**
-1. **Verifies/Installs Node.js**: If Node is not installed, it automatically downloads and installs Node.js LTS.
-2. **Auto-Installs Dependencies**: Installs all required packages for both Express backend and React Vite frontend.
-3. **Configures Unique Render Names**: Automatically updates `render.yaml` with your custom name/slug so live hosting never has domain clashes.
-4. **Verifies MongoDB Live**: Prompts for your MongoDB URI and tests the connection in real-time. If there is an issue (e.g. wrong password or un-whitelisted IP), it explains the exact fix step-by-step.
-5. **Generates Security Keys**: Creates strong cryptographic JWT secrets and configures all `.env` files automatically.
-6. **Seeds Sample Homestays**: Pre-populates 4 rich luxury homestays and demo login credentials (`demo@homestays.com` / `Demo@123`).
-7. **Launches & Opens Browser**: Starts the backend, frontend, verifies API health, and opens the live app in your browser!
+### Step 2: 1-Click Launch!
+* **On Windows**: Double-click **`START_HOMESTAYS.bat`**
+* **On macOS / Linux**: Run `./start.sh` (or `npm start`)
 
-### 🩺 Option 2: Interactive CLI Doctor & Validator
-- **Windows**: Double-click **`cli.bat`** (or `doctor.bat`)
-- **macOS / Linux**: Run `npm run cli`
+That is literally all! The multi-agent assistant handles every technical step automatically. The **only** thing requested from the student is their MongoDB Atlas connection string when running for the first time.
 
-### ⚡ Option 3: Silent Background Setup
-- **Windows**: Double-click **`setup.bat`** or run `.\setup.ps1`
-- **macOS / Linux**: Run `npm run setup` then `npm start`
+---
 
-> **What the script handles automatically:**
-> 1. Verifies/Installs Node.js LTS (>= 18).
-> 2. Auto-generates `.env` files from templates and creates a secure `JWT_SECRET`.
-> 3. Interactively prompts for and verifies your **MongoDB URI** using an instant connection check.
-> 4. Installs all locked API and Client dependencies.
-> 5. Launches the backend on port `4000`, the frontend on port `5173`, and opens your default browser!
+## 🤖 Autonomous Multi-Agent & Resume Engine
+
+HomeStays features a built-in stateful **Autonomous Multi-Agent System** (`scripts/orchestrator.js`) designed to guarantee success when cloning on a clean machine:
+
+| Agent | Responsibility |
+|---|---|
+| **System Agent** | Auto-detects Node.js LTS (>= 18). If missing on Windows, auto-installs it silently via winget / official MSI. |
+| **Port Sentinel** | Checks ports `4000` (API) and `5173` (Client). If occupied by zombie/orphaned Node processes, automatically frees them (`EADDRINUSE` immune). |
+| **Dependency Agent** | Validates backend and frontend npm dependencies. Installs missing packages in parallel. |
+| **Config & Security Agent** | Auto-generates cryptographically secure 64-character `JWT_SECRET`, configures CORS, and synchronizes `.env`. |
+| **Database Agent** | **Only asks user for credentials if needed**. Pings existing connection; if valid, skips instantly. If missing or invalid, prompts with targeted diagnostic assistance (Atlas `0.0.0.0/0` whitelist, campus Wi-Fi port blocking). |
+| **Seed Agent** | Pre-populates 4 luxury homestays and demo host user (`demo@homestays.com` / `Demo@123`) if the database is fresh. |
+| **Supervisor Agent** | Spawns API and Client concurrently, monitors `/health` probe, launches default web browser, and handles graceful shutdown. |
+
+### 🔁 Stateful Resume (Zero Redo)
+If a student closes the window midway during setup, or restarts their computer:
+- The orchestrator checks `.homestays_state.json`.
+- Completed stages are **verified in milliseconds and skipped**.
+- It resumes immediately from where it left off, never re-prompting for credentials that are already working.
+
+### Useful CLI Commands:
+```bash
+npm start           # Run autonomous multi-agent launcher & servers
+npm run doctor      # Run full diagnostic health check without starting servers
+npm run seed        # Re-seed demo luxury homestays and host credentials
+npm run warmup      # Test and warm up live cloud Render endpoint
+npm run reset       # Reset saved state checkpoints to re-run from scratch
+```
 
 ---
 
 ## 🌐 Live Deployment on Render
 
-> 📖 **Student Walkthrough Guide**: For a beginner-friendly, visual walkthrough covering every single button click from opening MongoDB Atlas to going live on Render, see [**`STUDENT_DEPLOY_GUIDE.md`**](./STUDENT_DEPLOY_GUIDE.md).
+> 📖 **Complete Visual Guide**: See [**`DEPLOYMENT.md`**](./DEPLOYMENT.md) for step-by-step instructions with screenshots.
 
-### Solving the "Reserved Site Name" Conflict on Render
-Render subdomains on `*.onrender.com` must be globally unique. Because many students submit with default service names, Render will reject blueprints if `homestays-api` or `homestays-client` are already taken.
+### Overcoming the "Reserved Site Name" Error
+Render requires subdomains on `*.onrender.com` to be globally unique. Because many students submit projects with default names (`homestays-api`), Render will reject blueprints if those names are already claimed.
 
-Run our built-in configuration script before pushing:
+HomeStays includes an automated slug synchronizer:
 ```powershell
-.\configure-render.ps1 -ProjectSlug "yourname-homestays"
+.\scripts\configure-render.ps1 -ProjectSlug "yourname-homestays"
 ```
-*(Replace `yourname-homestays` with your name, initials, or roll number, e.g. `sumit-2026`).*
+*(Replace `yourname-homestays` with your name or roll number).*
 
-This automatically synchronizes [`render.yaml`](./render.yaml):
-- **API Service**: `yourname-homestays-api` (`https://yourname-homestays-api.onrender.com`)
-- **Client Service**: `yourname-homestays-client` (`https://yourname-homestays-client.onrender.com`)
-- **Zero domain clashes or broken blueprint references!**
+This instantly configures [`render.yaml`](./render.yaml), `.github/workflows/keep-alive.yml`, and client environment:
+- **API Service**: `yourname-homestays-api`
+- **Client Service**: `yourname-homestays-client`
 
-### Deployment Steps:
-1. **MongoDB Atlas**: Ensure your Atlas Cluster allows access from anywhere (`0.0.0.0/0`) in **Network Access**.
-2. **Push to GitHub**:
+### Deploying via Render Blueprint:
+1. Ensure your MongoDB Atlas cluster has `0.0.0.0/0` enabled in **Network Access**.
+2. Push your repo to GitHub:
    ```bash
    git add .
    git commit -m "Configure unique Render blueprint"
    git push origin main
    ```
-3. **Render Blueprint**:
-   - Go to [dashboard.render.com](https://dashboard.render.com) → **New +** → **Blueprint**.
-   - Select your repo. Render reads `render.yaml` and auto-provisions both the API and Vite Client.
-   - Enter your `DB_URL` when prompted and click **Apply**.
-
-### 🚀 Render Live Warm-Up Assistant (Presentation Day Hero)
-Render's free tier goes to sleep after 15 minutes of inactivity. Use the built-in **Warm-Up Assistant** so your invigilator never experiences a 60-second cold start:
-
-- **Double-click**: **`warmup.bat`** (or `render-assistant.bat`)
-- **Or command line**:
-  ```bash
-  npm run warmup
-  ```
-- **Capabilities**:
-  - **Option 1**: Configure unique project names in `render.yaml` with 1 click.
-  - **Option 2**: Wakes up your server, primes the MongoDB connection cache, and tests the client CDN.
-  - **Option 3 (Sentinel Mode)**: Automatically sends a ping every 9 minutes so Render **never goes to sleep** during your evaluation.
+3. In [dashboard.render.com](https://dashboard.render.com):
+   - Click **New +** → **Blueprint**.
+   - Connect your GitHub repository `padmalochan475/Homestays`.
+   - Paste your MongoDB Atlas URI when prompted for `DB_URL`.
+   - Click **Apply**.
+4. Both frontend and backend deploy automatically. Render uses the included health check (`/health`) to confirm uptime.
 
 ---
 
 ## 🔑 Environment Variables
 
-### API Environment (`api/.env`)
-| Variable | Required | Description | Default / Example |
-| :--- | :---: | :--- | :--- |
-| `PORT` | Optional | Express server port | `4000` |
-| `DB_URL` | **Yes** | MongoDB connection string | `mongodb+srv://...` |
-| `JWT_SECRET` | **Yes** | Secret used to sign JWT authentication tokens | Auto-generated by setup script |
-| `CLIENT_URL` | Optional | Allowed CORS origins (comma-separated for multi-domain) | `http://localhost:5173,http://127.0.0.1:5173` |
-| `MAIL_USERNAME` | Optional | Gmail user address for OTP | *(Demo mode active if omitted)* |
-| `OAUTH_CLIENTID` | Optional | Google Cloud OAuth Client ID | *(Demo mode active if omitted)* |
-| `OAUTH_CLIENT_SECRET` | Optional | Google Cloud OAuth Client Secret | *(Demo mode active if omitted)* |
-| `OAUTH_REFRESH_TOKEN` | Optional | Google Cloud OAuth Refresh Token | *(Demo mode active if omitted)* |
-| `BUCKET_NAME` | Optional | AWS S3 Bucket Name | *(Local uploads active if omitted)* |
-| `AWS_REGION` | Optional | AWS Region | `eu-north-1` |
-| `S3_ACCESS_KEY` | Optional | AWS Access Key ID | *(Local uploads active if omitted)* |
-| `S3_SECRET_ACCESS_KEY`| Optional | AWS Secret Access Key | *(Local uploads active if omitted)* |
+### Backend (`api/.env`)
+| Variable | Description | Default / Example |
+|---|---|---|
+| `PORT` | API listen port | `4000` |
+| `DB_URL` | MongoDB connection URI | `mongodb+srv://user:pass@cluster0...` |
+| `CLIENT_URL` | Permitted frontend origins | `http://localhost:5173,http://127.0.0.1:5173` |
+| `JWT_SECRET` | Token signature secret | *Auto-generated 64-character key* |
+| `AWS_REGION` | AWS S3 Bucket Region | *(Optional, falls back to disk)* |
+| `BUCKET_NAME` | AWS S3 Bucket Name | *(Optional, falls back to disk)* |
+| `S3_ACCESS_KEY` | AWS S3 Access Key | *(Optional, falls back to disk)* |
+| `S3_SECRET_ACCESS_KEY` | AWS S3 Secret Key | *(Optional, falls back to disk)* |
+| `MAIL_USERNAME` | Google OAuth2 user email | *(Optional, demo OTP active)* |
+| `OAUTH_CLIENTID` | Google OAuth2 Client ID | *(Optional, demo OTP active)* |
+| `OAUTH_CLIENT_SECRET` | Google OAuth2 Client Secret | *(Optional, demo OTP active)* |
+| `OAUTH_REFRESH_TOKEN` | Google OAuth2 Refresh Token | *(Optional, demo OTP active)* |
 
-### Client Environment (`client/.env`)
-| Variable | Required | Description | Default / Example |
-| :--- | :---: | :--- | :--- |
-| `VITE_API_BASE_URL` | **Yes** | URL pointing to the backend API | `http://localhost:4000` or `https://<your-api>.onrender.com` |
+### Frontend (`client/.env`)
+| Variable | Description | Default / Example |
+|---|---|---|
+| `VITE_API_BASE_URL` | Backend API URL | `http://localhost:4000` |
 
 ---
 
 ## 🛡️ Built-In Invigilator Resiliency Features
 
-| Feature | Without Our Solution | With Our Solution |
-| :--- | :--- | :--- |
-| **User Registration** | Crashes with 503 error if Gmail OAuth is unconfigured. | **Smart Demo OTP**: Code generates, logs to console, displays on screen, and registers cleanly in MongoDB. |
-| **Photo Uploads** | Fails with AWS credential errors. | **Universal Storage**: Automatically switches to local `api/uploads` and supports pasting direct web image URLs. |
-| **Live Evaluation** | Logged out immediately on Render due to browser 3rd-party cookie blocking. | **Dual Auth**: Axios interceptor automatically passes JWT `Bearer` token in headers, ensuring 100% session persistence. |
-| **CORS Subdomains** | Requests blocked if Render assigns a different slug. | **Dynamic CORS**: Seamlessly accepts any `*.onrender.com` or `*.vercel.app` origin. |
+1. **Zero-Touch Cold Start Elimination**: Includes a 24/7 GitHub Actions workflow ([`.github/workflows/keep-alive.yml`](.github/workflows/keep-alive.yml)) that pings the live Render API every 10 minutes, keeping free-tier containers awake.
+2. **Cold-Start Banner & Auto-Retry**: If the API is spinning up from cold sleep, the frontend displays an animated warm-up banner and automatically retries requests up to 4 times.
+3. **Cross-Domain Bearer Tokens**: Solves third-party cookie restrictions across `*.onrender.com` by injecting `Authorization: Bearer <token>` into Axios headers while maintaining cookie compatibility.
+4. **Auth State Hydration**: Protects account pages from bouncing users to `/login` during page refreshes by synchronizing auth state hydration.
+5. **Cascading Bookings Cleanup**: Cancelling a booking cleanly frees reserved dates from the listing and removes references from user profiles.
+6. **IDOR Authorization Protection**: Users can only update or delete accommodations and reservations that they own.
 
 ---
 
 ## 📡 API Reference
 
-### User & Authentication
+### Authentication & Users
 - `POST /user/register` - Create user account
 - `POST /user/login` - Authenticate user & issue JWT
 - `POST /user/logout` - Clear user session
@@ -225,13 +229,13 @@ Render's free tier goes to sleep after 15 minutes of inactivity. Use the built-i
 
 ## 🧪 Pre-Seeded Demo Data
 
-To populate your database with rich luxury homestays (Manali Chalet, Goa Villa, Jaipur Haveli, Munnar Estate) and a pre-configured host account, simply run:
+Pre-populated sample accommodations:
+1. **Mountain Mist Luxury Chalet** (Old Manali, Himachal Pradesh)
+2. **Sunset Wave Villa & Private Pool** (Anjuna Beach, Goa)
+3. **Royal Heritage Courtyard Haveli** (Jaipur, Rajasthan)
+4. **Emerald Estate Tea Plantation Cottage** (Munnar, Kerala)
 
-```bash
-npm run seed
-```
-
-### Pre-Configured Test Credentials:
+### Demo Host Credentials:
 - **Email**: `demo@homestays.com`
 - **Password**: `Demo@123`
 
