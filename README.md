@@ -79,19 +79,34 @@ flowchart TD
 
 ---
 
-## 🚀 1-Click Setup & Run (Any Machine)
+## 🚀 How Students Use & Run This Project
 
-### Step 1: Clone the Repository
-```bash
-git clone https://github.com/padmalochan475/Homestays.git
-cd Homestays
-```
+### 💻 Option 1: Local Laptop Presentation (Instant — No GitHub account needed)
+1. **Clone or Download**:
+   ```bash
+   git clone https://github.com/padmalochan475/Homestays.git
+   cd Homestays
+   ```
+   *(Or click the green **Code → Download ZIP** on GitHub and extract the folder).*
+2. **1-Click Launch**:
+   * **On Windows**: Double-click **`START_HOMESTAYS.bat`**
+   * **On macOS / Linux**: Run `./start.sh` (or `npm start`)
+3. **Enter Credentials**:
+   * Paste your MongoDB Atlas connection string when prompted.
+   * That is literally all! The autonomous multi-agent assistant handles Node.js, dependencies, ports, database connection, demo listings, and opens your browser automatically!
 
-### Step 2: 1-Click Launch!
-* **On Windows**: Double-click **`START_HOMESTAYS.bat`**
-* **On macOS / Linux**: Run `./start.sh` (or `npm start`)
+---
 
-That is literally all! The multi-agent assistant handles every technical step automatically. The **only** thing requested from the student is their MongoDB Atlas connection string when running for the first time.
+### 🌐 Option 2: Live Cloud Presentation on Render (10-Second Setup)
+Because Render builds directly from GitHub, you just need the repo in your personal GitHub account:
+1. **Fork the Repository (10 Seconds)**:
+   * Open [https://github.com/padmalochan475/Homestays](https://github.com/padmalochan475/Homestays).
+   * In the top-right corner, click **Fork** → **Create fork**.
+2. **Deploy on Render**:
+   * Open [dashboard.render.com](https://dashboard.render.com) → **New +** → **Blueprint**.
+   * Connect your forked repository.
+   * Paste your MongoDB Atlas URI when prompted for `DB_URL` → Click **Apply**.
+   * Render automatically builds both the Express API and Vite React frontend with 24/7 keep-alive!
 
 ---
 

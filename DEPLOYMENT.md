@@ -59,18 +59,34 @@ MongoDB Atlas gives you a free 512MB cloud database that stays online 24/7.
 
 ---
 
-## Phase 2: Preparing Your GitHub Repository
+## Phase 2: Adding the Project to Your GitHub
 
-Because Render requires globally unique subdomains (e.g. `yourname-api.onrender.com`), you must give your project a unique name so it doesn't clash with other students.
+Render deploys by connecting to your personal GitHub account. You need the repository in your GitHub.
 
-### Step 2.1: Run the Blueprint Customizer
-Open your terminal in the `HomeStays` root folder and run:
+### Option A: The 10-Second "Fork" (Recommended & Easiest)
+1. Open the repository:
+   👉 **[https://github.com/padmalochan475/Homestays](https://github.com/padmalochan475/Homestays)**
+2. In the top-right corner, click the **Fork** button.
+3. Click **Create fork**.
+4. **Done!** The repository is now in your personal GitHub: `https://github.com/<your-username>/Homestays`.
+
+### Option B: If You Cloned to Your Laptop First
+If you already downloaded or cloned the code to your local computer:
+1. Create a new repository on [github.com/new](https://github.com/new) (e.g. `my-homestays`).
+2. In your project terminal, run:
+   ```bash
+   git remote set-url origin https://github.com/<your-username>/my-homestays.git
+   git push -u origin main
+   ```
+
+### Step 2.1: Run the Blueprint Customizer (Avoid Render Conflicts)
+Because Render requires globally unique subdomains (e.g. `yourname-api.onrender.com`), assign your unique project slug:
 ```powershell
-.\scripts\configure-render.ps1 -ProjectSlug "yourname-homestays"
+npm run configure:render
 ```
-*(Replace `yourname-homestays` with your name or roll number, e.g. `rahul-2026`).*
+*(Or run `.\scripts\configure-render.ps1 -ProjectSlug "yourname-homestays"` with your name or roll number).*
 
-### Step 2.2: Commit and Push to GitHub
+### Step 2.2: Commit and Push Changes
 ```bash
 git add .
 git commit -m "Configure unique Render service names"
