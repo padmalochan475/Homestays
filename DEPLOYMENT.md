@@ -122,34 +122,32 @@ Your live links will be visible in the Render dashboard:
 | :--- | :--- | :--- |
 | **Kept `< >` in password** | `MongoParseError: URI malformed` or authentication fails. | Remove `<` and `>` around your password in the DB string. |
 | **Forgot `0.0.0.0/0` in Atlas** | Works locally, but Render logs say `ServerSelectionError: queryTxt ETIMEOUT`. | Go to Atlas $\rightarrow$ Network Access $\rightarrow$ Add IP `0.0.0.0/0`. |
-| **Reserved name on Render** | Render says `Service name 'homestays-api' is already taken`. | Run `.\configure-render.ps1` to assign a unique name. |
-| **Cold-start delay during viva** | Evaluator clicks the link, page spins for 60 seconds. | Run `warmup.bat` 5 minutes before your turn (see Phase 5). |
+| **Reserved name on Render** | Render says `Service name 'homestays-api' is already taken`. | Run `npm run configure:render` to assign a unique name. |
+| **Cold-start delay during viva** | Evaluator clicks the link, page spins for 60 seconds. | GitHub Actions auto-pings every 10 min. You can also run `npm run warmup`. |
 | **Forgot to seed sample listings** | Homepage is empty when the invigilator opens it. | Run `npm run seed` locally to pre-populate 4 luxury homestays. |
 
 ---
 
 ## Phase 5: Presentation Day Strategy (Getting Full Marks)
 
-Render's free tier spins down backend containers after 15 minutes of inactivity. To ensure the invigilator sees an **instant, high-speed website**:
+Render's free tier spins down backend containers after 15 minutes of inactivity. HomeStays has a 3-layer anti-sleep defense system:
 
-### Step 5.1: The 5-Minute Warm-Up
+### 1. Automated 24/7 Cloud Pinger (Zero-Touch)
+The repository includes `.github/workflows/keep-alive.yml` which pings your live Render API every 10 minutes automatically via GitHub Actions—keeping it permanently awake without opening any terminal!
+
+### 2. Manual Pre-Presentation Warm-Up
 5 minutes before your viva or evaluation begins:
-1. Double-click **`warmup.bat`** (or run `npm run warmup`).
-2. Choose **Option [2] (Wake Up & Warm Up Live Server)**.
-3. Enter your live Render API URL.
-4. The assistant will:
-   - Wake up the container from sleep.
-   - Prime the MongoDB database connection pool.
-   - Warm up the frontend CDN edge caches.
-   - Confirm that the response time is under **150ms**!
+1. Run `npm run warmup`.
+2. It sends a fast HTTP probe to your live endpoint:
+   - Wakes up the container if sleeping.
+   - Primes the MongoDB database connection pool.
+   - Warms up edge CDN caches.
+   - Confirms that the response latency is under **150ms**!
 
-### Step 5.2: Sentinel Mode (Zero Sleep During Exam Hours)
-If your evaluation spans a 1–2 hour period:
-1. Double-click **`warmup.bat`** $\rightarrow$ Choose **Option [3] (Sentinel Keep-Alive Mode)**.
-2. Leave the window open on your laptop.
-3. It will send a tiny ping every 9 minutes so Render **never goes to sleep** during your entire exam session.
+### 3. Client-Side Smart Auto-Retry
+If an evaluation happens right after cold spin-up, the frontend displays an animated warm-up banner (*"⚡ Waking up live cloud backend..."*) and retries up to 4 times automatically.
 
-### Step 5.3: Evaluator Demo Walkthrough
+### 4. Evaluator Demo Walkthrough
 When demonstrating to the teacher or invigilator:
 1. **Show Homestay Browsing**: Point out the pre-seeded Manali Chalet, Goa Villa, and Jaipur Haveli. Filter by name or address.
 2. **Show Dual Authentication**: Register a new user (`demo@homestays.com`). Highlight the **Smart Demo OTP Mode** that validates without needing external email APIs.
