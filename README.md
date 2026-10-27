@@ -207,6 +207,32 @@ This instantly configures [`render.yaml`](./render.yaml), `.github/workflows/kee
 
 ---
 
+### 📧 Email Verification & Privacy Guide
+
+HomeStays supports **two peaceful modes** for user registration and OTP verification:
+
+#### 1. Zero-Configuration Mode (Default — 100% Free & Private)
+- If `MAIL_USERNAME` and `MAIL_PASSWORD` are left blank, HomeStays runs in **Zero-Configuration Mode**.
+- New users register **instantly in 1 click** without having to enter any verification code or configure mail servers.
+- **Zero privacy risk**: No personal emails or third-party credentials are used.
+
+#### 2. Live Email Mode with Free Google App Password (2-Minute Setup)
+If live email dispatch to real user inboxes is desired for evaluations or presentations, follow this industry-standard best practice:
+1. **Create a Dedicated Project Account**: Visit [accounts.google.com/signup](https://accounts.google.com/signup) and create a free account dedicated to this project (e.g. `homestays.project.demo@gmail.com`). This ensures your personal account and data remain 100% private.
+2. **Enable 2-Step Verification**: Visit [myaccount.google.com/security](https://myaccount.google.com/security) and turn on 2-Step Verification.
+3. **Generate a 16-Character App Password**: Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), enter `HomeStays` as the App Name, and copy the 16-character password provided.
+4. **Configure in `.env` or Deployment Settings**:
+   - In [`api/.env`](api/.env) (Local):
+     ```env
+     MAIL_USERNAME=homestays.project.demo@gmail.com
+     MAIL_PASSWORD=abcdefghijklmnop
+     ```
+   - On **Render Dashboard** / [`render.yaml`](render.yaml) (Cloud Deployment):
+     Add `MAIL_USERNAME` and `MAIL_PASSWORD` under Environment Variables.
+5. **Privacy & Revocation**: The 16-character App Password only permits outgoing SMTP emails; it never reveals your real password and can be revoked with 1 click anytime from your Google Security dashboard.
+
+---
+
 ## 🛡️ Built-In Invigilator Resiliency Features
 
 1. **Zero-Touch Cold Start Elimination**: Includes a 24/7 GitHub Actions workflow ([`.github/workflows/keep-alive.yml`](.github/workflows/keep-alive.yml)) that pings the live Render API every 10 minutes, keeping free-tier containers awake.
@@ -215,7 +241,8 @@ This instantly configures [`render.yaml`](./render.yaml), `.github/workflows/kee
 4. **Auth State Hydration**: Protects account pages from bouncing users to `/login` during page refreshes by synchronizing auth state hydration.
 5. **Cascading Bookings Cleanup**: Cancelling a booking cleanly frees reserved dates from the listing and removes references from user profiles.
 6. **Bidirectional Credential Synchronization**: Editing administrator or host credentials (`ADMIN_EMAIL`, `ADMIN_PASSWORD`, `HOST_EMAIL`, `HOST_PASSWORD`) in `api/.env` automatically migrates accounts and syncs password hashes in MongoDB on boot or login; conversely, editing profile credentials in the Web UI automatically updates `api/.env` and runtime memory in real time.
-6. **IDOR Authorization Protection**: Users can only update or delete accommodations and reservations that they own.
+7. **IDOR & Price Tampering Protection**: Users can only update or delete accommodations and reservations they own; booking prices are validated and calculated server-authoritatively from MongoDB to prevent client-side price manipulation.
+8. **Date & Calendar Integrity**: Past dates and already-reserved intervals are strictly disabled in the UI and rejected by the API (`400 Bad Request` / `409 Conflict`), eliminating race conditions and invalid reservations.
 
 ---
 

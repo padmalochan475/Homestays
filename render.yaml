@@ -21,6 +21,8 @@ services:
           property: host
       - key: MAIL_USERNAME
         sync: false
+      - key: MAIL_PASSWORD
+        sync: false
       - key: OAUTH_CLIENTID
         sync: false
       - key: OAUTH_CLIENT_SECRET
@@ -35,10 +37,14 @@ services:
         sync: false
       - key: S3_SECRET_ACCESS_KEY
         sync: false
+      - key: ADMIN_NAME
+        value: Platform Administrator
       - key: ADMIN_EMAIL
         value: admin@homestays.com
       - key: ADMIN_PASSWORD
         value: Admin@123
+      - key: HOST_NAME
+        value: Demo Host
       - key: HOST_EMAIL
         value: demo@homestays.com
       - key: HOST_PASSWORD
