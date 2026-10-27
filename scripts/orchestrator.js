@@ -409,7 +409,8 @@ function launchApplication() {
                 print('╚══════════════════════════════════════════════════════════════════╝' + c.reset);
                 print(`  🌐 Web App:         ${c.bright}${c.white}${detectedClientUrl}${c.reset}`);
                 print(`  ⚡ API Endpoint:    ${c.white}http://localhost:4000/health${c.reset}`);
-                print(`  🔑 Demo Host Login: ${c.cyan}${c.bright}demo@homestays.com${c.reset} / ${c.cyan}Demo@123${c.reset}`);
+                print(`  🔑 Host Account:    ${c.cyan}${c.bright}demo@homestays.com${c.reset} / ${c.cyan}Demo@123${c.reset}`);
+                print(`  🛡️ Admin Portal:    ${c.cyan}${c.bright}admin@homestays.com${c.reset} / ${c.cyan}Admin@123${c.reset} (or visit /admin)`);
                 print(`  📲 Demo Mode:       ${c.yellow}OTP codes are logged to console and pre-filled${c.reset}`);
                 print(c.green + '═'.repeat(68) + c.reset);
                 print(`\nOpening application in your default web browser (${detectedClientUrl})...\n`, c.cyan);

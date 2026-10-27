@@ -87,7 +87,7 @@ async function seedDatabase() {
     await mongoose.connect(DB_URL);
     console.log('\x1b[32m%s\x1b[0m', '[✓] Connected to MongoDB!');
 
-    // 1. Create Demo User
+    // 1. Create Demo Host & Administrator Accounts
     const demoEmail = 'demo@homestays.com';
     let user = await User.findOne({ email: demoEmail });
     if (!user) {
@@ -96,10 +96,26 @@ async function seedDatabase() {
             name: 'Demo Host',
             email: demoEmail,
             password: hashedPassword,
+            role: 'admin',
         });
-        console.log('\x1b[32m%s\x1b[0m', `[✓] Created Demo User: ${demoEmail} (Password: Demo@123)`);
+        console.log('\x1b[32m%s\x1b[0m', `[✓] Created Demo Host User: ${demoEmail} (Password: Demo@123, Role: admin)`);
     } else {
-        console.log('\x1b[33m%s\x1b[0m', `[*] Demo User already exists: ${demoEmail}`);
+        user.role = 'admin';
+        await user.save();
+        console.log('\x1b[33m%s\x1b[0m', `[*] Demo Host exists and verified as admin: ${demoEmail}`);
+    }
+
+    const adminEmail = 'admin@homestays.com';
+    let adminUser = await User.findOne({ email: adminEmail });
+    if (!adminUser) {
+        const hashedPassword = bcrypt.hashSync('Admin@123', 10);
+        await User.create({
+            name: 'Platform Administrator',
+            email: adminEmail,
+            password: hashedPassword,
+            role: 'admin',
+        });
+        console.log('\x1b[32m%s\x1b[0m', `[✓] Created Dedicated Admin User: ${adminEmail} (Password: Admin@123, Role: admin)`);
     }
 
     // 2. Create Sample Places
@@ -117,9 +133,9 @@ async function seedDatabase() {
 
     console.log('\x1b[32m%s\x1b[0m', `[✓] Successfully added ${createdCount} sample homestay listings!`);
     console.log('\n======================================================');
-    console.log(' Demo Login Credentials:');
-    console.log(' Email:    demo@homestays.com');
-    console.log(' Password: Demo@123');
+    console.log(' Available Demo Credentials:');
+    console.log(' 1. Host Account:    demo@homestays.com   (Demo@123)');
+    console.log(' 2. Admin Portal:    admin@homestays.com  (Admin@123)');
     console.log('======================================================\n');
 
     await mongoose.disconnect();

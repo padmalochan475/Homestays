@@ -1,16 +1,25 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
+import { UserContext } from "../Context/userContext";
 
 const AccountNav = ({subpage}) => {
+  const { user } = useContext(UserContext);
+  const isAdmin = Boolean(
+    user?.role === "admin" ||
+    user?.email === "demo@homestays.com" ||
+    user?.email === "admin@homestays.com" ||
+    user?.email?.toLowerCase().startsWith("admin@")
+  );
+
   const linkClass = (type) => {
-    let classes = "py-2 px-4 flex gap-1 rounded-full hover:scale-105 transition-all xs:px-6";
-    if (type === subpage) classes += " bg-pink text-white";
-    else classes += " bg-gray-200";
+    let classes = "py-2 px-4 flex gap-1.5 rounded-full hover:scale-105 transition-all xs:px-6 items-center font-semibold text-sm";
+    if (type === subpage) classes += " bg-pink text-white shadow-sm";
+    else classes += " bg-gray-200 text-gray-700";
     return classes;
   };
+
   return (
-    <>
-    <nav className="w-full flex justify-center mt-2 gap-4 mb-8 font-semibold flex-wrap xs:mt-8">
+    <nav className="w-full flex justify-center mt-2 gap-3 mb-8 font-semibold flex-wrap xs:mt-8">
       <Link className={linkClass("profile")} to={"/account"}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -18,7 +27,7 @@ const AccountNav = ({subpage}) => {
           viewBox="0 0 24 24"
           strokeWidth="1.5"
           stroke="currentColor"
-          className="w-6 h-6"
+          className="w-5 h-5"
         >
           <path
             strokeLinecap="round"
@@ -35,7 +44,7 @@ const AccountNav = ({subpage}) => {
           viewBox="0 0 24 24"
           strokeWidth="1.5"
           stroke="currentColor"
-          className="w-6 h-6"
+          className="w-5 h-5"
         >
           <path
             strokeLinecap="round"
@@ -52,7 +61,7 @@ const AccountNav = ({subpage}) => {
           viewBox="0 0 24 24"
           strokeWidth="1.5"
           stroke="currentColor"
-          className="w-6 h-6"
+          className="w-5 h-5"
         >
           <path
             strokeLinecap="round"
@@ -62,8 +71,16 @@ const AccountNav = ({subpage}) => {
         </svg>
         My Accommodations
       </Link>
+      {isAdmin && (
+        <Link
+          className="py-2 px-4 flex gap-1.5 rounded-full hover:scale-105 transition-all xs:px-6 items-center bg-gray-900 text-white shadow-sm border border-gray-700 text-sm font-semibold"
+          to={"/admin"}
+        >
+          <span>🛡️</span>
+          Admin Console
+        </Link>
+      )}
     </nav>
-    </>
   );
 };
 

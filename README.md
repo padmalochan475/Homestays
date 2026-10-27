@@ -250,9 +250,22 @@ Pre-populated sample accommodations:
 3. **Royal Heritage Courtyard Haveli** (Jaipur, Rajasthan)
 4. **Emerald Estate Tea Plantation Cottage** (Munnar, Kerala)
 
-### Demo Host Credentials:
-- **Email**: `demo@homestays.com`
-- **Password**: `Demo@123`
+### Demo Credentials:
+| Portal | Email | Password | Access Capabilities |
+| :--- | :--- | :--- | :--- |
+| **Dedicated Admin Console** | `admin@homestays.com` | `Admin@123` | Full system control: platform metrics, delete any accommodation, cancel any booking, manage user accounts & roles at `/admin`. |
+| **Host Account** | `demo@homestays.com` | `Demo@123` | Host property management at `/account/places`, preview listings, test booking flows. |
+
+---
+
+## 🛡️ Dedicated Admin Console (`/admin`)
+
+HomeStays features a dedicated **Administrator Management Console** accessible at `/admin`:
+- **Real-Time KPIs**: Total registered users, total homestay listings, total reservations, and gross platform booking volume in ₹ INR.
+- **Accommodations Moderation**: Inspect all listings across all hosts, preview properties, and delete violating listings with automatic cascade cleanup of reservations.
+- **Reservations Management**: View all customer reservations platform-wide, guest contact info, dates, and amounts, with administrator cancellation capability.
+- **User Management**: View all registered user accounts, toggle user roles between `USER` and `ADMIN`, or delete accounts.
+- **System Diagnostics**: Inspect MongoDB connection state, API uptime, Node version, and environment health.
 
 ---
 

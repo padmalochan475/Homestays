@@ -29,9 +29,10 @@ router.post('/register', async (req, res) => {
             password: bcrypt.hashSync(password, bcryptSalt),
         });
 
+        const userRole = newUser.role || (newUser.email === 'demo@homestays.com' || newUser.email.startsWith('admin@') ? 'admin' : 'user');
         const jwtSecret = process.env.JWT_SECRET;
         const token = jwt.sign(
-            { email: newUser.email, id: newUser._id, name: newUser.name },
+            { email: newUser.email, id: newUser._id, name: newUser.name, role: userRole },
             jwtSecret,
             { expiresIn: '24h' }
         );
@@ -48,6 +49,7 @@ router.post('/register', async (req, res) => {
         delete userResponse.password;
         userResponse.token = token;
         userResponse.id = newUser._id;
+        userResponse.role = userRole;
         res.json(userResponse);
     } catch (e) {
         console.error('Registration error:', e);
@@ -75,9 +77,10 @@ router.post('/login', async (req, res) => {
             return res.status(422).json({ error: 'Wrong Password' });
         }
 
+        const userRole = user.role || (user.email === 'demo@homestays.com' || user.email.startsWith('admin@') ? 'admin' : 'user');
         const jwtSecret = process.env.JWT_SECRET;
         const token = jwt.sign(
-            { email: user.email, id: user._id, name: user.name },
+            { email: user.email, id: user._id, name: user.name, role: userRole },
             jwtSecret,
             { expiresIn: '24h' }
         );
@@ -94,6 +97,7 @@ router.post('/login', async (req, res) => {
         delete userResponse.password;
         userResponse.token = token;
         userResponse.id = user._id;
+        userResponse.role = userRole;
         return res.json(userResponse);
     } catch (err) {
         console.error('Login error:', err);
@@ -158,8 +162,22 @@ router.get('/allusers', async (_req, res) => {
 });
 
 // Route to get data for user profile
-router.get('/profile', isLoggedIn, (req, res) => {
-    res.json({ ...req.user, _id: req.user.id });
+router.get('/profile', isLoggedIn, async (req, res) => {
+    try {
+        const fullUser = await User.findById(req.user.id);
+        const email = (fullUser?.email || req.user?.email || '').toLowerCase();
+        const role = fullUser?.role || req.user?.role || (email === 'demo@homestays.com' || email.startsWith('admin@') ? 'admin' : 'user');
+        res.json({
+            ...req.user,
+            _id: req.user.id,
+            id: req.user.id,
+            name: fullUser?.name || req.user.name,
+            email: fullUser?.email || req.user.email,
+            role,
+        });
+    } catch (e) {
+        res.json({ ...req.user, _id: req.user.id, id: req.user.id, role: 'user' });
+    }
 });
 
 // Route to update add bookings and bookedPlaces data inside user on a booking

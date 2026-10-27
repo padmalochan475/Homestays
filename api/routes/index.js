@@ -6,6 +6,7 @@ const userController = require('../controllers/userController');
 const placeController = require('../controllers/placeController');
 const bookingController = require('../controllers/bookingController');
 const OtpController = require('../controllers/otpController');
+const adminController = require('../controllers/adminController');
 const Place = require('../models/Place');
 const imageDownload = require('image-downloader');
 const multer = require('multer');
@@ -16,6 +17,7 @@ router.use('/user', userController);
 router.use('/place', placeController);
 router.use('/booking', bookingController);
 router.use('/otp', OtpController);
+router.use('/admin', adminController);
 
 // Ensure local uploads directory exists
 const uploadsDir = path.join(__dirname, '../uploads');
